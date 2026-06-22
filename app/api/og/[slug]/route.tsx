@@ -83,7 +83,7 @@ export async function GET(
       </div>
 
       <img
-  src="http://localhost:3000/carteo-logo.png"
+ src="https://carteo.cloud/carteo-logo.png?v=2"
   width={280}
   height={280}
   style={{

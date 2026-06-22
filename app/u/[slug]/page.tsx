@@ -1,6 +1,30 @@
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../../lib/firebase";
 
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+
+  return {
+    title: "Cartéo",
+    description: "Carte de visite numérique",
+    openGraph: {
+      title: "Cartéo",
+      description: "Carte de visite numérique",
+      images: [`https://carteo.cloud/api/og/${slug}`],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: "Cartéo",
+      description: "Carte de visite numérique",
+      images: [`https://carteo.cloud/api/og/${slug}`],
+    },
+  };
+}
+
 const linkStyle = {
   color: "white",
   textDecoration: "none",

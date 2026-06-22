@@ -83,9 +83,13 @@ export async function GET(
       </div>
 
       <img
-  src="https://carteo.cloud/carteo-logo.png?v=3"
-  width="280"
-  height="280"
+  src="https://carteo.cloud/carteo-logo.png?v=2"
+  width={280}
+  height={280}
+  style={{
+    borderRadius: 40,
+    objectFit: "contain",
+  }}
 />
     </div>
   ),

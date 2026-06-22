@@ -8,18 +8,29 @@ export async function generateMetadata({
 }) {
   const { slug } = await params;
 
-  return {
-    title: "Cartéo",
-    description: "Carte de visite numérique",
-    openGraph: {
+  const profileSnap = await getDoc(doc(db, "profiles", slug));
+
+  if (!profileSnap.exists()) {
+    return {
       title: "Cartéo",
       description: "Carte de visite numérique",
+    };
+  }
+
+  const profile = profileSnap.data();
+
+  return {
+    title: `${profile.name} | Cartéo`,
+    description: profile.title || "Carte de visite numérique",
+    openGraph: {
+      title: `${profile.name} | Cartéo`,
+      description: profile.title || "Carte de visite numérique",
       images: [`https://carteo.cloud/api/og/${slug}`],
     },
     twitter: {
       card: "summary_large_image",
-      title: "Cartéo",
-      description: "Carte de visite numérique",
+      title: `${profile.name} | Cartéo`,
+      description: profile.title || "Carte de visite numérique",
       images: [`https://carteo.cloud/api/og/${slug}`],
     },
   };

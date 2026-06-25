@@ -1,5 +1,14 @@
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../../lib/firebase";
+import {
+  FaInstagram,
+  FaTiktok,
+  FaSnapchatGhost,
+  FaFacebook,
+  FaLinkedin,
+  FaYoutube
+} from "react-icons/fa"
+
 
 export async function generateMetadata({
   params,
@@ -42,10 +51,14 @@ const linkStyle = {
   background: "#1C1C1E",
   padding: "12px 18px",
   borderRadius: "14px",
-  width: "260px",
+  width: "280px",
   textAlign: "center" as const,
   border: "1px solid rgba(255,255,255,0.08)",
   backdropFilter: "blur(12px)",
+display: "flex",
+alignItems: "center",
+justifyContent: "center",
+gap: "12px",
 };
 
 export default async function PublicProfilePage({
@@ -62,6 +75,41 @@ export default async function PublicProfilePage({
   }
 
   const profile = profileSnap.data();
+  const isActive = profile.isActive !== false;
+  const isPremium = profile.isPremium === true;
+ 
+
+const socialLinks = [
+  { title: "Instagram", value: profile.instagram, icon: <FaInstagram /> },
+  { title: "Snapchat", value: profile.snapchat, icon: <FaSnapchatGhost /> },
+  { title: "TikTok", value: profile.tiktok, icon: <FaTiktok /> },
+  { title: "Facebook", value: profile.facebook, icon: <FaFacebook /> },
+  { title: "YouTube", value: profile.youtube, icon: <FaYoutube /> },
+].filter((item) => item.value);
+
+const visibleSocialLinks = isPremium ? socialLinks : socialLinks.slice(0, 1);
+
+if (!isActive) {
+  return (
+    <div
+      style={{
+        color: "white",
+        minHeight: "100vh",
+        background: "linear-gradient(180deg, #0A0A0A 0%, #111827 100%)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        textAlign: "center",
+        padding: "32px",
+      }}
+    >
+      <div>
+        <h1>Carte inactive</h1>
+        <p>Cette carte n’est actuellement plus disponible.</p>
+      </div>
+    </div>
+  );
+}
 
   return (
     <div
@@ -102,12 +150,23 @@ export default async function PublicProfilePage({
       {profile.phone && <a href={`tel:${profile.phone}`} style={linkStyle}>📞 {profile.phone}</a>}
       {profile.email && <a href={`mailto:${profile.email}`} style={linkStyle}>✉️ {profile.email}</a>}
       {profile.website && <a href={profile.website} target="_blank" style={linkStyle}>🌐 Site web</a>}
-      {profile.linkedin && <a href={profile.linkedin} target="_blank" style={linkStyle}>💼 LinkedIn</a>}
-      {profile.instagram && <a href={profile.instagram} target="_blank" style={linkStyle}>📷 Instagram</a>}
-      {profile.snapchat && <a href={profile.snapchat} target="_blank" style={linkStyle}>👻 Snapchat</a>}
-      {profile.tiktok && <a href={profile.tiktok} target="_blank" style={linkStyle}>🎵 TikTok</a>}
-      {profile.facebook && <a href={profile.facebook} target="_blank" style={linkStyle}>👍 Facebook</a>}
-      {profile.youtube && <a href={profile.youtube} target="_blank" style={linkStyle}>▶️ YouTube</a>}
+      {profile.linkedin && (
+  <a href={profile.linkedin} target="_blank" style={linkStyle}>
+    <FaLinkedin size={24}/> LinkedIn
+  </a>
+)}
+
+{visibleSocialLinks.map((item) => (
+  <a
+    key={item.title}
+    href={item.value}
+    target="_blank"
+    style={linkStyle}
+  >
+    {item.icon}
+    {item.title}
+  </a>
+))}
 
       {profile.bio && (
         <p style={{ maxWidth: "360px", textAlign: "center", opacity: 0.9 }}>

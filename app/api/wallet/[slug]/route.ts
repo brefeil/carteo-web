@@ -61,6 +61,35 @@ function clean(value: unknown, maxLength = 120) {
   return typeof value === "string" ? value.trim().slice(0, maxLength) : "";
 }
 
+async function fetchWalletPNG(value: unknown) {
+  const source = clean(value, 1000);
+  if (!source) return null;
+
+  try {
+    const url = new URL(source);
+    const allowedHosts = new Set([
+      "firebasestorage.googleapis.com",
+      "storage.googleapis.com",
+    ]);
+
+    if (url.protocol !== "https:" || !allowedHosts.has(url.hostname)) return null;
+
+    const response = await fetch(url, {
+      signal: AbortSignal.timeout(5000),
+      cache: "no-store",
+    });
+    if (!response.ok) return null;
+
+    const contentType = response.headers.get("content-type") ?? "";
+    if (!contentType.startsWith("image/png")) return null;
+
+    const buffer = Buffer.from(await response.arrayBuffer());
+    return buffer.byteLength <= 2 * 1024 * 1024 ? buffer : null;
+  } catch {
+    return null;
+  }
+}
+
 function displayURL(value: string) {
   return value.replace(/^https?:\/\//i, "").replace(/\/$/, "");
 }
@@ -97,11 +126,23 @@ export async function GET(
     const { signerCert, signerKey } = extractSignerFromP12(p12, p12Password);
     const wwdr = derCertificateToPem(wwdrDer);
 
+    const [walletAvatar, walletAvatar2x, walletAvatar3x] = await Promise.all([
+      fetchWalletPNG(profile.walletAvatar),
+      fetchWalletPNG(profile.walletAvatar2x),
+      fetchWalletPNG(profile.walletAvatar3x),
+    ]);
+
+    const walletImages: Record<string, Buffer> = {};
+    if (walletAvatar) walletImages["thumbnail.png"] = walletAvatar;
+    if (walletAvatar2x) walletImages["thumbnail@2x.png"] = walletAvatar2x;
+    if (walletAvatar3x) walletImages["thumbnail@3x.png"] = walletAvatar3x;
+
     const pass = new PKPass(
       {
         "icon.png": Buffer.from(ICON_1X, "base64"),
         "icon@2x.png": Buffer.from(ICON_2X, "base64"),
         "icon@3x.png": Buffer.from(ICON_3X, "base64"),
+        ...walletImages,
       },
       { wwdr, signerCert, signerKey },
       {

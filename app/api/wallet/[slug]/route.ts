@@ -190,11 +190,30 @@ export async function GET(
       });
     }
 
+    // Keep the most useful business details visible on the front of the pass.
+    // Generic passes leave the barcode area at the bottom, so these compact
+    // auxiliary fields make the card easier to scan without opening details.
     if (company) {
       pass.auxiliaryFields.push({
         key: "company",
         label: "ENTREPRISE",
         value: company,
+      });
+    }
+
+    if (phone) {
+      pass.auxiliaryFields.push({
+        key: "phoneFront",
+        label: "TÉLÉPHONE",
+        value: phone,
+      });
+    }
+
+    if (email) {
+      pass.auxiliaryFields.push({
+        key: "emailFront",
+        label: "E-MAIL",
+        value: email,
       });
     }
 

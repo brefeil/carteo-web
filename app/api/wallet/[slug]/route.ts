@@ -1,6 +1,7 @@
 import { doc, getDoc } from "firebase/firestore";
 import forge from "node-forge";
 import { PKPass } from "passkit-generator";
+import sharp from "sharp";
 import { db } from "../../../lib/firebase";
 
 export const runtime = "nodejs";
@@ -61,6 +62,62 @@ function clean(value: unknown, maxLength = 120) {
   return typeof value === "string" ? value.trim().slice(0, maxLength) : "";
 }
 
+function displayURL(value: string) {
+  return value.replace(/^https?:\/\//i, "").replace(/\/$/, "");
+}
+
+async function walletThumbnailAssets(value: unknown) {
+  const avatar = clean(value, 1000);
+  if (!avatar) return {};
+
+  try {
+    const url = new URL(avatar);
+    const allowedHosts = new Set([
+      "firebasestorage.googleapis.com",
+      "storage.googleapis.com",
+    ]);
+
+    if (url.protocol !== "https:" || !allowedHosts.has(url.hostname)) {
+      console.warn("Wallet avatar skipped: unsupported host");
+      return {};
+    }
+
+    const response = await fetch(url, {
+      signal: AbortSignal.timeout(5000),
+      cache: "no-store",
+    });
+    if (!response.ok) return {};
+
+    const contentType = response.headers.get("content-type") ?? "";
+    if (!contentType.startsWith("image/")) return {};
+
+    const source = Buffer.from(await response.arrayBuffer());
+    if (source.byteLength > 8 * 1024 * 1024) return {};
+
+    const makeThumbnail = (size: number) =>
+      sharp(source)
+        .rotate()
+        .resize(size, size, { fit: "cover", position: "centre" })
+        .png()
+        .toBuffer();
+
+    const [oneX, twoX, threeX] = await Promise.all([
+      makeThumbnail(90),
+      makeThumbnail(180),
+      makeThumbnail(270),
+    ]);
+
+    return {
+      "thumbnail.png": oneX,
+      "thumbnail@2x.png": twoX,
+      "thumbnail@3x.png": threeX,
+    };
+  } catch (error) {
+    console.warn("Wallet avatar could not be prepared", error);
+    return {};
+  }
+}
+
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ slug: string }> },
@@ -90,12 +147,14 @@ export async function GET(
 
     const { signerCert, signerKey } = extractSignerFromP12(p12, p12Password);
     const wwdr = derCertificateToPem(wwdrDer);
+    const thumbnailAssets = await walletThumbnailAssets(profile.avatar);
 
     const pass = new PKPass(
       {
         "icon.png": Buffer.from(ICON_1X, "base64"),
         "icon@2x.png": Buffer.from(ICON_2X, "base64"),
         "icon@3x.png": Buffer.from(ICON_3X, "base64"),
+        ...thumbnailAssets,
       },
       { wwdr, signerCert, signerKey },
       {
@@ -119,6 +178,14 @@ export async function GET(
     const company = clean(profile.company, 100);
     const phone = clean(profile.phone, 40);
     const email = clean(profile.email, 120);
+    const website = clean(profile.website, 300);
+    const linkedin = clean(profile.linkedin, 300);
+    const instagram = clean(profile.instagram, 300);
+    const tiktok = clean(profile.tiktok, 300);
+    const snapchat = clean(profile.snapchat, 300);
+    const facebook = clean(profile.facebook, 300);
+    const youtube = clean(profile.youtube, 300);
+    const bio = clean(profile.bio, 1000);
     const profileURL = `https://carteo.cloud/u/${encodeURIComponent(slug)}`;
 
     pass.primaryFields.push({
@@ -154,14 +221,78 @@ export async function GET(
     if (email) {
       pass.backFields.push({
         key: "email",
-        label: "E-mail",
+        label: "E-MAIL",
         value: email,
+      });
+    }
+
+    if (website) {
+      pass.backFields.push({
+        key: "website",
+        label: "SITE WEB",
+        value: website,
+      });
+    }
+
+    if (linkedin) {
+      pass.backFields.push({
+        key: "linkedin",
+        label: "LINKEDIN",
+        value: displayURL(linkedin),
+      });
+    }
+
+    if (instagram) {
+      pass.backFields.push({
+        key: "instagram",
+        label: "INSTAGRAM",
+        value: displayURL(instagram),
+      });
+    }
+
+    if (tiktok) {
+      pass.backFields.push({
+        key: "tiktok",
+        label: "TIKTOK",
+        value: displayURL(tiktok),
+      });
+    }
+
+    if (snapchat) {
+      pass.backFields.push({
+        key: "snapchat",
+        label: "SNAPCHAT",
+        value: displayURL(snapchat),
+      });
+    }
+
+    if (facebook) {
+      pass.backFields.push({
+        key: "facebook",
+        label: "FACEBOOK",
+        value: displayURL(facebook),
+      });
+    }
+
+    if (youtube) {
+      pass.backFields.push({
+        key: "youtube",
+        label: "YOUTUBE",
+        value: displayURL(youtube),
+      });
+    }
+
+    if (bio) {
+      pass.backFields.push({
+        key: "bio",
+        label: "À PROPOS",
+        value: bio,
       });
     }
 
     pass.backFields.push({
       key: "profile",
-      label: "Carte Cartéo",
+      label: "CARTE CARTÉO",
       value: profileURL,
     });
 

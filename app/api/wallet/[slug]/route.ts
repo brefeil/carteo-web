@@ -65,55 +65,10 @@ function displayURL(value: string) {
   return value.replace(/^https?:\/\//i, "").replace(/\/$/, "");
 }
 
-async function walletThumbnailAssets(value: unknown, origin: string) {
-  const avatar = clean(value, 1000);
-  if (!avatar) return {};
 
-  try {
-    const avatarURL = new URL(avatar);
-    const allowedHosts = new Set([
-      "firebasestorage.googleapis.com",
-      "storage.googleapis.com",
-    ]);
-
-    if (avatarURL.protocol !== "https:" || !allowedHosts.has(avatarURL.hostname)) {
-      console.warn("Wallet avatar skipped: unsupported host");
-      return {};
-    }
-
-    const fetchThumbnail = async (size: number) => {
-      const url = new URL("/api/wallet-avatar", origin);
-      url.searchParams.set("url", avatarURL.toString());
-      url.searchParams.set("size", String(size));
-
-      const response = await fetch(url, {
-        signal: AbortSignal.timeout(7000),
-        cache: "no-store",
-      });
-      if (!response.ok) throw new Error(`Avatar renderer returned ${response.status}`);
-
-      return Buffer.from(await response.arrayBuffer());
-    };
-
-    const [oneX, twoX, threeX] = await Promise.all([
-      fetchThumbnail(90),
-      fetchThumbnail(180),
-      fetchThumbnail(270),
-    ]);
-
-    return {
-      "thumbnail.png": oneX,
-      "thumbnail@2x.png": twoX,
-      "thumbnail@3x.png": threeX,
-    };
-  } catch (error) {
-    console.warn("Wallet avatar could not be prepared", error);
-    return {};
-  }
-}
 
 export async function GET(
-  request: Request,
+  _request: Request,
   { params }: { params: Promise<{ slug: string }> },
 ) {
   try {
@@ -141,14 +96,12 @@ export async function GET(
 
     const { signerCert, signerKey } = extractSignerFromP12(p12, p12Password);
     const wwdr = derCertificateToPem(wwdrDer);
-    const thumbnailAssets = await walletThumbnailAssets(profile.avatar, new URL(request.url).origin);
 
     const pass = new PKPass(
       {
         "icon.png": Buffer.from(ICON_1X, "base64"),
         "icon@2x.png": Buffer.from(ICON_2X, "base64"),
         "icon@3x.png": Buffer.from(ICON_3X, "base64"),
-        ...thumbnailAssets,
       },
       { wwdr, signerCert, signerKey },
       {

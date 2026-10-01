@@ -1,7 +1,6 @@
 import { doc, getDoc } from "firebase/firestore";
 import forge from "node-forge";
 import { PKPass } from "passkit-generator";
-import sharp from "sharp";
 import { db } from "../../../lib/firebase";
 
 export const runtime = "nodejs";
@@ -66,45 +65,40 @@ function displayURL(value: string) {
   return value.replace(/^https?:\/\//i, "").replace(/\/$/, "");
 }
 
-async function walletThumbnailAssets(value: unknown) {
+async function walletThumbnailAssets(value: unknown, origin: string) {
   const avatar = clean(value, 1000);
   if (!avatar) return {};
 
   try {
-    const url = new URL(avatar);
+    const avatarURL = new URL(avatar);
     const allowedHosts = new Set([
       "firebasestorage.googleapis.com",
       "storage.googleapis.com",
     ]);
 
-    if (url.protocol !== "https:" || !allowedHosts.has(url.hostname)) {
+    if (avatarURL.protocol !== "https:" || !allowedHosts.has(avatarURL.hostname)) {
       console.warn("Wallet avatar skipped: unsupported host");
       return {};
     }
 
-    const response = await fetch(url, {
-      signal: AbortSignal.timeout(5000),
-      cache: "no-store",
-    });
-    if (!response.ok) return {};
+    const fetchThumbnail = async (size: number) => {
+      const url = new URL("/api/wallet-avatar", origin);
+      url.searchParams.set("url", avatarURL.toString());
+      url.searchParams.set("size", String(size));
 
-    const contentType = response.headers.get("content-type") ?? "";
-    if (!contentType.startsWith("image/")) return {};
+      const response = await fetch(url, {
+        signal: AbortSignal.timeout(7000),
+        cache: "no-store",
+      });
+      if (!response.ok) throw new Error(`Avatar renderer returned ${response.status}`);
 
-    const source = Buffer.from(await response.arrayBuffer());
-    if (source.byteLength > 8 * 1024 * 1024) return {};
-
-    const makeThumbnail = (size: number) =>
-      sharp(source)
-        .rotate()
-        .resize(size, size, { fit: "cover", position: "centre" })
-        .png()
-        .toBuffer();
+      return Buffer.from(await response.arrayBuffer());
+    };
 
     const [oneX, twoX, threeX] = await Promise.all([
-      makeThumbnail(90),
-      makeThumbnail(180),
-      makeThumbnail(270),
+      fetchThumbnail(90),
+      fetchThumbnail(180),
+      fetchThumbnail(270),
     ]);
 
     return {
@@ -119,7 +113,7 @@ async function walletThumbnailAssets(value: unknown) {
 }
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ slug: string }> },
 ) {
   try {
@@ -147,7 +141,7 @@ export async function GET(
 
     const { signerCert, signerKey } = extractSignerFromP12(p12, p12Password);
     const wwdr = derCertificateToPem(wwdrDer);
-    const thumbnailAssets = await walletThumbnailAssets(profile.avatar);
+    const thumbnailAssets = await walletThumbnailAssets(profile.avatar, new URL(request.url).origin);
 
     const pass = new PKPass(
       {

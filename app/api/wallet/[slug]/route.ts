@@ -61,6 +61,41 @@ function clean(value: unknown, maxLength = 120) {
   return typeof value === "string" ? value.trim().slice(0, maxLength) : "";
 }
 
+async function fetchWalletPNG(value: unknown) {
+  const source = clean(value, 1000);
+  if (!source) return null;
+
+  try {
+    const url = new URL(source);
+    const allowedHosts = new Set([
+      "firebasestorage.googleapis.com",
+      "storage.googleapis.com",
+    ]);
+
+    if (url.protocol !== "https:" || !allowedHosts.has(url.hostname)) return null;
+
+    const response = await fetch(url, {
+      signal: AbortSignal.timeout(5000),
+      cache: "no-store",
+    });
+    if (!response.ok) return null;
+
+    const contentType = response.headers.get("content-type") ?? "";
+    if (!contentType.startsWith("image/png")) return null;
+
+    const buffer = Buffer.from(await response.arrayBuffer());
+    return buffer.byteLength <= 2 * 1024 * 1024 ? buffer : null;
+  } catch {
+    return null;
+  }
+}
+
+function displayURL(value: string) {
+  return value.replace(/^https?:\/\//i, "").replace(/\/$/, "");
+}
+
+
+
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ slug: string }> },
@@ -91,11 +126,23 @@ export async function GET(
     const { signerCert, signerKey } = extractSignerFromP12(p12, p12Password);
     const wwdr = derCertificateToPem(wwdrDer);
 
+    const [walletAvatar, walletAvatar2x, walletAvatar3x] = await Promise.all([
+      fetchWalletPNG(profile.walletAvatar),
+      fetchWalletPNG(profile.walletAvatar2x),
+      fetchWalletPNG(profile.walletAvatar3x),
+    ]);
+
+    const walletImages: Record<string, Buffer> = {};
+    if (walletAvatar) walletImages["thumbnail.png"] = walletAvatar;
+    if (walletAvatar2x) walletImages["thumbnail@2x.png"] = walletAvatar2x;
+    if (walletAvatar3x) walletImages["thumbnail@3x.png"] = walletAvatar3x;
+
     const pass = new PKPass(
       {
         "icon.png": Buffer.from(ICON_1X, "base64"),
         "icon@2x.png": Buffer.from(ICON_2X, "base64"),
         "icon@3x.png": Buffer.from(ICON_3X, "base64"),
+        ...walletImages,
       },
       { wwdr, signerCert, signerKey },
       {
@@ -104,7 +151,7 @@ export async function GET(
         teamIdentifier,
         serialNumber: slug,
         organizationName: "Cartéo",
-        description: "Carte de visite numérique Cartéo",
+        description: "Carte Cartéo",
         logoText: "Cartéo",
         backgroundColor: "rgb(9, 16, 29)",
         foregroundColor: "rgb(255, 255, 255)",
@@ -119,6 +166,14 @@ export async function GET(
     const company = clean(profile.company, 100);
     const phone = clean(profile.phone, 40);
     const email = clean(profile.email, 120);
+    const website = clean(profile.website, 300);
+    const linkedin = clean(profile.linkedin, 300);
+    const instagram = clean(profile.instagram, 300);
+    const tiktok = clean(profile.tiktok, 300);
+    const snapchat = clean(profile.snapchat, 300);
+    const facebook = clean(profile.facebook, 300);
+    const youtube = clean(profile.youtube, 300);
+    const bio = clean(profile.bio, 1000);
     const profileURL = `https://carteo.cloud/u/${encodeURIComponent(slug)}`;
 
     pass.primaryFields.push({
@@ -154,15 +209,85 @@ export async function GET(
     if (email) {
       pass.backFields.push({
         key: "email",
-        label: "E-mail",
+        label: "E-MAIL",
         value: email,
+      });
+    }
+
+    if (website) {
+      pass.backFields.push({
+        key: "website",
+        label: "SITE WEB",
+        value: website,
+      });
+    }
+
+    if (linkedin) {
+      pass.backFields.push({
+        key: "linkedin",
+        label: "LINKEDIN",
+        value: linkedin,
+      });
+    }
+
+    if (instagram) {
+      pass.backFields.push({
+        key: "instagram",
+        label: "INSTAGRAM",
+        value: instagram,
+      });
+    }
+
+    if (tiktok) {
+      pass.backFields.push({
+        key: "tiktok",
+        label: "TIKTOK",
+        value: tiktok,
+      });
+    }
+
+    if (snapchat) {
+      pass.backFields.push({
+        key: "snapchat",
+        label: "SNAPCHAT",
+        value: snapchat,
+      });
+    }
+
+    if (facebook) {
+      pass.backFields.push({
+        key: "facebook",
+        label: "FACEBOOK",
+        value: facebook,
+      });
+    }
+
+    if (youtube) {
+      pass.backFields.push({
+        key: "youtube",
+        label: "YOUTUBE",
+        value: youtube,
+      });
+    }
+
+    if (bio) {
+      pass.backFields.push({
+        key: "bio",
+        label: "À PROPOS",
+        value: bio,
       });
     }
 
     pass.backFields.push({
       key: "profile",
-      label: "Carte Cartéo",
+      label: "CARTE CARTÉO",
       value: profileURL,
+    });
+
+    pass.backFields.push({
+      key: "vcard",
+      label: "AJOUTER AUX CONTACTS",
+      value: `https://carteo.cloud/api/vcard?slug=${encodeURIComponent(slug)}`,
     });
 
     pass.setBarcodes({

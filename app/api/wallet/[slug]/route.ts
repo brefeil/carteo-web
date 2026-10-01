@@ -110,7 +110,7 @@ export async function GET(
         teamIdentifier,
         serialNumber: slug,
         organizationName: "Cartéo",
-        description: "Carte de visite numérique Cartéo",
+        description: "Carte Cartéo",
         logoText: "Cartéo",
         backgroundColor: "rgb(9, 16, 29)",
         foregroundColor: "rgb(255, 255, 255)",
@@ -185,7 +185,7 @@ export async function GET(
       pass.backFields.push({
         key: "linkedin",
         label: "LINKEDIN",
-        value: displayURL(linkedin),
+        value: linkedin,
       });
     }
 
@@ -193,7 +193,7 @@ export async function GET(
       pass.backFields.push({
         key: "instagram",
         label: "INSTAGRAM",
-        value: displayURL(instagram),
+        value: instagram,
       });
     }
 
@@ -201,7 +201,7 @@ export async function GET(
       pass.backFields.push({
         key: "tiktok",
         label: "TIKTOK",
-        value: displayURL(tiktok),
+        value: tiktok,
       });
     }
 
@@ -209,7 +209,7 @@ export async function GET(
       pass.backFields.push({
         key: "snapchat",
         label: "SNAPCHAT",
-        value: displayURL(snapchat),
+        value: snapchat,
       });
     }
 
@@ -217,7 +217,7 @@ export async function GET(
       pass.backFields.push({
         key: "facebook",
         label: "FACEBOOK",
-        value: displayURL(facebook),
+        value: facebook,
       });
     }
 
@@ -225,7 +225,7 @@ export async function GET(
       pass.backFields.push({
         key: "youtube",
         label: "YOUTUBE",
-        value: displayURL(youtube),
+        value: youtube,
       });
     }
 
@@ -241,6 +241,12 @@ export async function GET(
       key: "profile",
       label: "CARTE CARTÉO",
       value: profileURL,
+    });
+
+    pass.backFields.push({
+      key: "vcard",
+      label: "AJOUTER AUX CONTACTS",
+      value: `https://carteo.cloud/api/vcard?slug=${encodeURIComponent(slug)}`,
     });
 
     pass.setBarcodes({

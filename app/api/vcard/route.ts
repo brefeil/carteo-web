@@ -1,5 +1,4 @@
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "../../lib/firebase";
+import { getProfileBySlug } from "../../lib/firestoreServer";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -9,13 +8,11 @@ export async function GET(request: Request) {
     return new Response("Slug manquant", { status: 400 });
   }
 
-  const profileSnap = await getDoc(doc(db, "profiles", slug));
+  const profile = await getProfileBySlug(slug);
 
-  if (!profileSnap.exists()) {
+  if (!profile) {
     return new Response("Profil introuvable", { status: 404 });
   }
-
-  const profile = profileSnap.data();
 
   const vcard = `BEGIN:VCARD
 VERSION:3.0

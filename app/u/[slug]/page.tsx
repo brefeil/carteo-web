@@ -1,5 +1,4 @@
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "../../lib/firebase";
+import { getProfileBySlug } from "../../lib/firestoreServer";
 import {
   FaInstagram,
   FaTiktok,
@@ -17,16 +16,15 @@ export async function generateMetadata({
 }) {
   const { slug } = await params;
 
-  const profileSnap = await getDoc(doc(db, "profiles", slug));
+  const profile = await getProfileBySlug(slug);
 
-  if (!profileSnap.exists()) {
+  if (!profile) {
     return {
       title: "Cartéo",
       description: "Carte de visite numérique",
     };
   }
 
-  const profile = profileSnap.data();
 
   return {
     title: `${profile.name} | Cartéo`,
@@ -68,13 +66,12 @@ export default async function PublicProfilePage({
 }) {
   const { slug } = await params;
 
-  const profileSnap = await getDoc(doc(db, "profiles", slug));
+  const profile = await getProfileBySlug(slug);
 
-  if (!profileSnap.exists()) {
+  if (!profile) {
     return <div style={{ color: "white", padding: 40 }}>Profil introuvable</div>;
   }
 
-  const profile = profileSnap.data();
   const isActive = profile.isActive !== false;
   const isPremium = profile.isPremium === true;
  

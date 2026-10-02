@@ -1,6 +1,5 @@
 import { ImageResponse } from "next/og";
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "../../../lib/firebase";
+import { getProfileBySlug } from "../../../lib/firestoreServer";
 
 export const runtime = "nodejs";
 
@@ -10,15 +9,11 @@ export async function GET(
 ) {
   const { slug } = await params;
 
-  const profileSnap = await getDoc(
-    doc(db, "profiles", slug)
-  );
+  const profile = await getProfileBySlug(slug);
 
-  if (!profileSnap.exists()) {
+  if (!profile) {
     return new Response("Profil introuvable", { status: 404 });
   }
-
-  const profile = profileSnap.data();
 
   return new ImageResponse(
   (

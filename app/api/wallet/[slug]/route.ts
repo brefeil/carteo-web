@@ -107,12 +107,10 @@ export async function GET(
       return new Response("Invalid profile", { status: 400 });
     }
 
-    const profileSnap = await getDoc(doc(db, "profiles", slug));
-    if (!profileSnap.exists()) {
+    const profile = await getProfileBySlug(slug);
+    if (!profile) {
       return new Response("Profile not found", { status: 404 });
     }
-
-    const profile = profileSnap.data();
     if (profile.isActive === false) {
       return new Response("Profile inactive", { status: 410 });
     }

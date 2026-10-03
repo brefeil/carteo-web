@@ -186,6 +186,13 @@ export async function GET(
     return Response.redirect(url, 302);
   } catch (error) {
     console.error("Google Wallet pass generation failed", { stage, error });
-    return new Response(`Unable to generate Google Wallet pass [${stage}]`, { status: 500 });
+    const detail =
+      error instanceof Error
+        ? error.message.replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 60)
+        : "unknown";
+    return new Response(
+      `Unable to generate Google Wallet pass [${stage}:${detail}]`,
+      { status: 500 },
+    );
   }
 }

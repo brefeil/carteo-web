@@ -1,7 +1,6 @@
-import { doc, getDoc } from "firebase/firestore";
+import { getProfileBySlug } from "../../../lib/firestoreServer";
 import forge from "node-forge";
 import { PKPass } from "passkit-generator";
-import { db } from "../../../lib/firebase";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

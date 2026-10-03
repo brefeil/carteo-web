@@ -59,6 +59,7 @@ export async function GET(
   _request: Request,
   { params }: { params: Promise<{ slug: string }> },
 ) {
+  let stage = "start";
   try {
     const { slug: rawSlug } = await params;
     const slug = decodeURIComponent(rawSlug).trim();
@@ -67,6 +68,7 @@ export async function GET(
       return new Response("Invalid profile", { status: 400 });
     }
 
+    stage = "profile-read";
     const profile = await getProfileBySlug(slug);
     if (!profile) {
       return new Response("Profile not found", { status: 404 });
@@ -75,6 +77,7 @@ export async function GET(
       return new Response("Profile inactive", { status: 410 });
     }
 
+    stage = "environment";
     const issuerId = requiredEnv("GOOGLE_WALLET_ISSUER_ID");
     const serviceAccountEmail = requiredEnv("GOOGLE_WALLET_SERVICE_ACCOUNT_EMAIL");
     const privateKey = requiredEnv("GOOGLE_WALLET_PRIVATE_KEY").replace(/\\n/g, "\n");
@@ -175,12 +178,14 @@ export async function GET(
       },
     };
 
+    stage = "jwt-sign";
     const jwt = signJwt(payload, privateKey);
+    stage = "redirect";
     const url = `https://pay.google.com/gp/v/save/${jwt}`;
 
     return Response.redirect(url, 302);
   } catch (error) {
-    console.error("Google Wallet pass generation failed", error);
-    return new Response("Unable to generate Google Wallet pass", { status: 500 });
+    console.error("Google Wallet pass generation failed", { stage, error });
+    return new Response(`Unable to generate Google Wallet pass [${stage}]`, { status: 500 });
   }
 }

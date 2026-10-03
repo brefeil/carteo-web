@@ -46,23 +46,28 @@ async function getAccessToken() {
     privateKey,
   );
 
-  const response = await fetch("https://oauth2.googleapis.com/token", {
+  let response: Response;
+  try {
+    response = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST",
     headers: { "content-type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
       grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
       assertion,
     }),
-    cache: "no-store",
-  });
+      cache: "no-store",
+    });
+  } catch {
+    throw new Error("token-network");
+  }
 
   if (!response.ok) {
-    throw new Error(`Unable to obtain Google access token (${response.status})`);
+    throw new Error(`token-http-${response.status}`);
   }
 
   const json = (await response.json()) as { access_token?: string };
   if (!json.access_token) {
-    throw new Error("Google access token missing");
+    throw new Error("token-missing");
   }
 
   return json.access_token;
@@ -106,7 +111,7 @@ export async function getProfileBySlug(slug: string) {
 
   if (response.status === 404) return null;
   if (!response.ok) {
-    throw new Error(`Firestore server read failed (${response.status})`);
+    throw new Error(`firestore-http-${response.status}`);
   }
 
   const document = (await response.json()) as {

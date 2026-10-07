@@ -8,6 +8,50 @@ function requiredEnv(name: string) {
   return value;
 }
 
+
+function normalizePrivateKey(raw: string) {
+  let value = raw.trim();
+
+  // If the full service-account JSON was pasted by mistake, extract private_key.
+  if (value.startsWith("{")) {
+    try {
+      const parsed = JSON.parse(value) as { private_key?: string };
+      if (parsed.private_key) value = parsed.private_key;
+    } catch {
+      // Keep original value; later validation will surface a clean error.
+    }
+  }
+
+  // Strip wrapping quotes that may come from copying the JSON value literally.
+  if (
+    (value.startsWith('"') && value.endsWith('"')) ||
+    (value.startsWith("'") && value.endsWith("'"))
+  ) {
+    value = value.slice(1, -1);
+  }
+
+  value = value.replace(/\\n/g, "\n").trim();
+
+  // Also accept a base64-encoded PEM.
+  if (!value.includes("BEGIN PRIVATE KEY")) {
+    try {
+      const decoded = Buffer.from(value, "base64").toString("utf8").trim();
+      if (decoded.includes("BEGIN PRIVATE KEY")) value = decoded;
+    } catch {
+      // Ignore and let the explicit validation below fail.
+    }
+  }
+
+  if (
+    !value.includes("-----BEGIN PRIVATE KEY-----") ||
+    !value.includes("-----END PRIVATE KEY-----")
+  ) {
+    throw new Error("private-key-format");
+  }
+
+  return value;
+}
+
 function base64Url(value: string | Buffer) {
   return Buffer.from(value)
     .toString("base64")
@@ -32,7 +76,7 @@ function signJwt(payload: Record<string, unknown>, privateKey: string) {
 
 async function getAccessToken() {
   const clientEmail = requiredEnv("GOOGLE_WALLET_SERVICE_ACCOUNT_EMAIL");
-  const privateKey = requiredEnv("GOOGLE_WALLET_PRIVATE_KEY").replace(/\\n/g, "\n");
+  const privateKey = normalizePrivateKey(requiredEnv("GOOGLE_WALLET_PRIVATE_KEY"));
   const now = Math.floor(Date.now() / 1000);
 
   const assertion = signJwt(

@@ -40,6 +40,79 @@ function signJwt(payload: Record<string, unknown>, privateKey: string) {
   return `${unsigned}.${base64Url(signature)}`;
 }
 
+
+async function getWalletAccessToken(serviceEmail: string, privateKey: string) {
+  const now = Math.floor(Date.now() / 1000);
+  const assertion = signJwt(
+    {
+      iss: serviceEmail,
+      scope: "https://www.googleapis.com/auth/wallet_object.issuer",
+      aud: "https://oauth2.googleapis.com/token",
+      iat: now,
+      exp: now + 3600,
+    },
+    privateKey,
+  );
+
+  const response = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "content-type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
+      assertion,
+    }),
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    const text = (await response.text()).slice(0, 200);
+    throw new Error(`wallet-token-http-${response.status}-${text}`);
+  }
+
+  const json = (await response.json()) as { access_token?: string };
+  if (!json.access_token) throw new Error("wallet-token-missing");
+  return json.access_token;
+}
+
+async function ensureGenericObject(
+  accessToken: string,
+  genericObject: Record<string, unknown>,
+) {
+  const objectId = String(genericObject.id ?? "");
+  const getUrl =
+    `https://walletobjects.googleapis.com/walletobjects/v1/genericObject/${encodeURIComponent(objectId)}`;
+
+  const existing = await fetch(getUrl, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+    cache: "no-store",
+  });
+
+  if (existing.ok) return;
+
+  if (existing.status !== 404) {
+    const text = (await existing.text()).slice(0, 300);
+    throw new Error(`wallet-object-get-${existing.status}-${text}`);
+  }
+
+  const created = await fetch(
+    "https://walletobjects.googleapis.com/walletobjects/v1/genericObject",
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify(genericObject),
+      cache: "no-store",
+    },
+  );
+
+  if (!created.ok && created.status !== 409) {
+    const text = (await created.text()).slice(0, 500);
+    throw new Error(`wallet-object-create-${created.status}-${text}`);
+  }
+}
+
 function colorForTheme(theme: string) {
   switch (theme) {
     case "mint":
@@ -159,6 +232,12 @@ export async function GET(
       };
     }
 
+    stage = "wallet-token";
+    const walletAccessToken = await getWalletAccessToken(serviceEmail, privateKey);
+
+    stage = "wallet-object";
+    await ensureGenericObject(walletAccessToken, genericObject);
+
     const now = Math.floor(Date.now() / 1000);
     const payload = {
       iss: serviceEmail,
@@ -167,7 +246,7 @@ export async function GET(
       iat: now,
       origins: ["https://carteo.cloud"],
       payload: {
-        genericObjects: [genericObject],
+        genericObjects: [{ id: objectId, classId }],
       },
     };
 

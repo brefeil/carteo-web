@@ -1,5 +1,5 @@
 import { createSign } from "crypto";
-import { getProfileBySlug, normalizePrivateKey } from "../../../lib/firestoreServer";
+import { getProfileBySlug, normalizePrivateKey, serviceAccountEmail } from "../../../lib/firestoreServer";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -79,7 +79,7 @@ export async function GET(
 
     stage = "environment";
     const issuerId = requiredEnv("GOOGLE_WALLET_ISSUER_ID");
-    const serviceAccountEmail = requiredEnv("GOOGLE_WALLET_SERVICE_ACCOUNT_EMAIL");
+    const serviceEmail = serviceAccountEmail();
     const privateKey = normalizePrivateKey(requiredEnv("GOOGLE_WALLET_PRIVATE_KEY"));
 
     const profileURL = `https://carteo.cloud/u/${encodeURIComponent(slug)}`;
@@ -161,7 +161,7 @@ export async function GET(
 
     const now = Math.floor(Date.now() / 1000);
     const payload = {
-      iss: serviceAccountEmail,
+      iss: serviceEmail,
       aud: "google",
       typ: "savetowallet",
       iat: now,

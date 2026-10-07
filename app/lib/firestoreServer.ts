@@ -8,6 +8,16 @@ function requiredEnv(name: string) {
   return value;
 }
 
+export function serviceAccountEmail() {
+  const value =
+    process.env.GOOGLE_WALLET_SERVICE_ACCOUNT_EMAIL ||
+    process.env.GOOGLE_WALLET_ACCOUNT_EMAIL;
+  if (!value) {
+    throw new Error("Missing environment variable: GOOGLE_WALLET_SERVICE_ACCOUNT_EMAIL");
+  }
+  return value.trim();
+}
+
 
 export function normalizePrivateKey(raw: string) {
   let value = raw.trim();
@@ -85,7 +95,7 @@ function signJwt(payload: Record<string, unknown>, privateKey: string) {
 }
 
 async function getAccessToken() {
-  const clientEmail = requiredEnv("GOOGLE_WALLET_SERVICE_ACCOUNT_EMAIL");
+  const clientEmail = serviceAccountEmail();
   const privateKey = normalizePrivateKey(requiredEnv("GOOGLE_WALLET_PRIVATE_KEY"));
   const now = Math.floor(Date.now() / 1000);
 

@@ -9,47 +9,57 @@ function requiredEnv(name: string) {
 }
 
 
-function normalizePrivateKey(raw: string) {
+export function normalizePrivateKey(raw: string) {
   let value = raw.trim();
 
-  // If the full service-account JSON was pasted by mistake, extract private_key.
+  // If the whole service-account JSON was pasted, extract private_key.
   if (value.startsWith("{")) {
     try {
       const parsed = JSON.parse(value) as { private_key?: string };
       if (parsed.private_key) value = parsed.private_key;
     } catch {
-      // Keep original value; later validation will surface a clean error.
+      // Keep the original value for the fallback parsing below.
     }
   }
 
-  // Strip wrapping quotes that may come from copying the JSON value literally.
+  // Remove wrapping quotes and normalize escaped line breaks.
   if (
     (value.startsWith('"') && value.endsWith('"')) ||
     (value.startsWith("'") && value.endsWith("'"))
   ) {
     value = value.slice(1, -1);
   }
+  value = value.replace(/\\+n/g, "\n").trim();
 
-  value = value.replace(/\\n/g, "\n").trim();
-
-  // Also accept a base64-encoded PEM.
+  // Accept a base64-encoded PEM too.
   if (!value.includes("BEGIN PRIVATE KEY")) {
     try {
       const decoded = Buffer.from(value, "base64").toString("utf8").trim();
       if (decoded.includes("BEGIN PRIVATE KEY")) value = decoded;
     } catch {
-      // Ignore and let the explicit validation below fail.
+      // Ignore and continue to explicit validation.
     }
   }
 
-  if (
-    !value.includes("-----BEGIN PRIVATE KEY-----") ||
-    !value.includes("-----END PRIVATE KEY-----")
-  ) {
+  const begin = "-----BEGIN PRIVATE KEY-----";
+  const end = "-----END PRIVATE KEY-----";
+  const beginIndex = value.indexOf(begin);
+  const endIndex = value.indexOf(end);
+
+  if (beginIndex < 0 || endIndex < 0 || endIndex <= beginIndex) {
     throw new Error("private-key-format");
   }
 
-  return value;
+  // Rebuild a canonical PEM even if Vercel received it on one line,
+  // with escaped newlines, spaces, or extra JSON formatting.
+  const body = value
+    .slice(beginIndex + begin.length, endIndex)
+    .replace(/[^A-Za-z0-9+/=]/g, "");
+
+  if (!body) throw new Error("private-key-empty");
+
+  const wrapped = body.match(/.{1,64}/g)?.join("\n") ?? body;
+  return `${begin}\n${wrapped}\n${end}\n`;
 }
 
 function base64Url(value: string | Buffer) {

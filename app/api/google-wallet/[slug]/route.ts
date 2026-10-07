@@ -167,13 +167,6 @@ export async function GET(
       iat: now,
       origins: ["https://carteo.cloud"],
       payload: {
-        genericClasses: [
-          {
-            id: classId,
-            issuerName: "Cartéo",
-            reviewStatus: "UNDER_REVIEW",
-          },
-        ],
         genericObjects: [genericObject],
       },
     };

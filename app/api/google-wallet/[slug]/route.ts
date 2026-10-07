@@ -1,5 +1,5 @@
 import { createSign } from "crypto";
-import { getProfileBySlug } from "../../../lib/firestoreServer";
+import { getProfileBySlug, normalizePrivateKey } from "../../../lib/firestoreServer";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -80,7 +80,7 @@ export async function GET(
     stage = "environment";
     const issuerId = requiredEnv("GOOGLE_WALLET_ISSUER_ID");
     const serviceAccountEmail = requiredEnv("GOOGLE_WALLET_SERVICE_ACCOUNT_EMAIL");
-    const privateKey = requiredEnv("GOOGLE_WALLET_PRIVATE_KEY").replace(/\\n/g, "\n");
+    const privateKey = normalizePrivateKey(requiredEnv("GOOGLE_WALLET_PRIVATE_KEY"));
 
     const profileURL = `https://carteo.cloud/u/${encodeURIComponent(slug)}`;
     const objectId = `${issuerId}.carteo_${slug.replace(/[^a-zA-Z0-9_.-]/g, "_")}`;

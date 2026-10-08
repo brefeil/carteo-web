@@ -8,6 +8,12 @@
  * Do not deploy as an entitlement writer until the transaction-id ownership
  * ledger and atomic Firestore writes are implemented.
  */
+const KNOWN_PRODUCTS: Readonly<Record<string, "subscription" | "lifetime">> = {
+  carteo_premium_monthly: "subscription",
+  carteo_premium_yearly: "subscription",
+  carteo_premium_lifetime_299: "lifetime",
+};
+
 export type VerifiedStorePurchase = {
   store: "apple" | "google";
   transactionId: string;
@@ -34,6 +40,7 @@ export function reconcileVerifiedPurchases(
   const valid = purchases.filter(p =>
     p.verifiedOwnerUID === ownerUID &&
     p.transactionId.length > 0 &&
+    KNOWN_PRODUCTS[p.productId] === p.productType &&
     !p.revoked &&
     (p.productType === "lifetime" ||
       (p.productType === "subscription" &&

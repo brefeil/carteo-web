@@ -110,15 +110,18 @@ if (!isActive) {
         padding: "32px",
       }}
     >
-      <img
-        src={profile.avatar}
-        width={170}
-        height={170}
-        style={{
-          borderRadius: "50%",
-          objectFit: "cover",
-        }}
-      />
+      {profile.avatar && (
+        <img
+          src={profile.avatar}
+          alt="Photo de profil"
+          width={170}
+          height={170}
+          style={{
+            borderRadius: "50%",
+            objectFit: "cover",
+          }}
+        />
+      )}
 
       <h1
   style={{

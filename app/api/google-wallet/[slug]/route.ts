@@ -1,5 +1,5 @@
 import { createSign } from "crypto";
-import { getProfileBySlug, normalizePrivateKey, serviceAccountEmail } from "../../../lib/firestoreServer";
+import { getPublicProfileBySlug, normalizePrivateKey, serviceAccountEmail } from "../../../lib/firestoreServer";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -142,7 +142,7 @@ export async function GET(
     }
 
     stage = "profile-read";
-    const profile = await getProfileBySlug(slug);
+    const profile = await getPublicProfileBySlug(slug);
     if (!profile) {
       return new Response("Profile not found", { status: 404 });
     }

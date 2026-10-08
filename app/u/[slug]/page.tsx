@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getProfileBySlug } from "../../lib/firestoreServer";
+import { getPublicProfileBySlug } from "../../lib/firestoreServer";
 import {
   FaInstagram,
   FaTiktok,
@@ -17,7 +17,7 @@ export async function generateMetadata({
 }) {
   const { slug } = await params;
 
-  const profile = await getProfileBySlug(slug);
+  const profile = await getPublicProfileBySlug(slug);
 
   // Do not leak card details in metadata when the public card is unavailable.
   if (!profile || profile.isActive === false) {
@@ -69,7 +69,7 @@ export default async function PublicProfilePage({
 }) {
   const { slug } = await params;
 
-  const profile = await getProfileBySlug(slug);
+  const profile = await getPublicProfileBySlug(slug);
 
   if (!profile) {
     return <div style={{ color: "white", padding: 40 }}>Profil introuvable</div>;

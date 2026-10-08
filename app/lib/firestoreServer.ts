@@ -207,7 +207,7 @@ export async function getPublicProfileBySlug(slug: string) {
   }
 
   // Import lazily to keep the policy separate from legacy Firestore decoding.
-  const { decidePublicCardAccess } = await import("./publicCardAccess");
+  const { decidePublicCardAccess, projectFreePublicCard } = await import("./publicCardAccess");
   const token = await getAccessToken();
   const entitlementUrl =
     `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents/premiumEntitlements/${encodeURIComponent(ownerUID)}`;
@@ -234,5 +234,7 @@ export async function getPublicProfileBySlug(slug: string) {
   if (!decision.accessible) return null;
 
   // The public page must never trust the client-controlled isPremium field.
-  return { ...profile, isPremium: decision.premiumFeatures };
+  return decision.premiumFeatures
+    ? { ...profile, isPremium: true }
+    : projectFreePublicCard(profile);
 }

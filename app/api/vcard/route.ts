@@ -10,8 +10,13 @@ export async function GET(request: Request) {
 
   const profile = await getProfileBySlug(slug);
 
-  if (!profile) {
-    return new Response("Profil introuvable", { status: 404 });
+  // A disabled card must not remain downloadable through the public vCard URL.
+  // Keep the reason for unavailability private.
+  if (!profile || profile.isActive === false) {
+    return new Response("Carte indisponible", {
+      status: 404,
+      headers: { "Cache-Control": "no-store" },
+    });
   }
 
   const vcard = `BEGIN:VCARD

@@ -11,8 +11,8 @@ export async function GET(
 
   const profile = await getProfileBySlug(slug);
 
-  if (!profile) {
-    return new Response("Profil introuvable", { status: 404 });
+  if (!profile || profile.isActive === false) {
+    return new Response("Carte indisponible", { status: 404, headers: { "Cache-Control": "no-store" } });
   }
 
   return new ImageResponse(

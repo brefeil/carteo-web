@@ -1,3 +1,4 @@
+import { notFound } from "next/navigation";
 import { getProfileBySlug } from "../../lib/firestoreServer";
 import {
   FaInstagram,
@@ -18,10 +19,12 @@ export async function generateMetadata({
 
   const profile = await getProfileBySlug(slug);
 
-  if (!profile) {
+  // Do not leak card details in metadata when the public card is unavailable.
+  if (!profile || profile.isActive === false) {
     return {
       title: "Cartéo",
       description: "Carte de visite numérique",
+      robots: { index: false, follow: false },
     };
   }
 
@@ -87,25 +90,9 @@ const socialLinks = [
 const visibleSocialLinks = isPremium ? socialLinks : socialLinks.slice(0, 1);
 
 if (!isActive) {
-  return (
-    <div
-      style={{
-        color: "white",
-        minHeight: "100vh",
-        background: "linear-gradient(180deg, #0A0A0A 0%, #111827 100%)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        textAlign: "center",
-        padding: "32px",
-      }}
-    >
-      <div>
-        <h1>Carte inactive</h1>
-        <p>Cette carte n’est actuellement plus disponible.</p>
-      </div>
-    </div>
-  );
+  // Never expose why a public card was disabled (billing, owner choice, etc.).
+  // Use the same neutral 404 presentation for every inactive card.
+  notFound();
 }
 
   return (

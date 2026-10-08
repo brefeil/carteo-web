@@ -51,7 +51,7 @@ export function decidePublicCardAccess(
  * Choose exactly one social link in a stable order until the owner can select
  * their preferred free social explicitly in a trusted profile field.
  */
-export function projectFreePublicCard<T extends Record<string, any>>(profile: T): T {
+export function projectFreePublicCard(profile: Record<string, any>): Record<string, any> {
   const socialFields = [
     "linkedin", "instagram", "tiktok", "snapchat", "facebook", "youtube",
   ] as const;

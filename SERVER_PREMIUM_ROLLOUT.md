@@ -47,3 +47,18 @@ to free features. Any entitlement lookup error other than a missing
 document fails closed rather than silently granting Premium.
 
 Do not set the flag on production until all prerequisites are satisfied.
+
+## Free-tier projection (staged)
+
+When verified Premium is absent or expired, the public resolver returns only
+the free contact fields: name, phone, email, and the first nonempty social
+network in a stable order. It strips Premium-only presentation fields such as
+job title, company, website, biography, photo, wallet thumbnails, and theme.
+This projection applies to public Web, vCard and newly generated Apple/Google
+Wallet passes through the shared resolver. It does not delete saved Firestore
+values. The existing QR URL is unchanged.
+
+**Important:** Wallet passes already installed on phones may retain previously
+embedded Premium details until an update mechanism is implemented. This is
+not yet a complete privacy guarantee for previously issued passes. Also
+confirm exact free-plan field policy with product before rollout.

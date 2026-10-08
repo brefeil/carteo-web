@@ -42,3 +42,36 @@ export function decidePublicCardAccess(
   // of the cause. Their existing slug / Wallet QR remains unchanged.
   return { accessible: isPrimary, premiumFeatures: false };
 }
+
+/**
+ * Free public projection shared by Web, vCard, and newly generated Wallet
+ * passes. This does not erase stored premium data: renewal restores it.
+ * Keep the public QR URL and slug unchanged.
+ *
+ * Choose exactly one social link in a stable order until the owner can select
+ * their preferred free social explicitly in a trusted profile field.
+ */
+export function projectFreePublicCard<T extends Record<string, any>>(profile: T): T {
+  const socialFields = [
+    "linkedin", "instagram", "tiktok", "snapchat", "facebook", "youtube",
+  ] as const;
+  const firstSocial = socialFields.find(
+    (key) => typeof profile[key] === "string" && profile[key].trim() !== "",
+  );
+  const free = { ...profile };
+  for (const key of socialFields) {
+    if (key !== firstSocial) free[key] = "";
+  }
+
+  // Hide all Premium-only presentation/contact fields from public consumers.
+  // Name, phone, email, slug and owner metadata are intentionally preserved.
+  for (const key of [
+    "title", "company", "website", "bio", "avatar",
+    "walletAvatar", "walletAvatar2x", "walletAvatar3x",
+  ]) {
+    free[key] = "";
+  }
+  free.theme = "blue";
+  free.isPremium = false;
+  return free;
+}

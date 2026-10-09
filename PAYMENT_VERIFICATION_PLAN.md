@@ -24,7 +24,7 @@ actual Android product IDs in Play Console against the allowlist before
 enabling. Existing purchases without this account binding must NOT be
 silently claimed by a different account.
 
-The server must authenticate Firebase ID tokens and bind the verified
+A standalone Firebase Secure Token ID token verifier is staged in `app/lib/firebaseIdTokenVerifier.ts`. It checks Google's RS256 signature, Firebase project audience/issuer, time claims and the Google signing certificate. This is not yet wired to a production endpoint. For higher-assurance purchase changes, also check token revocation/disabled users with Firebase Admin SDK (or an equivalent trusted lookup), apply request throttling, and do not treat token validation alone as proof of purchase ownership.\n\nThe server must authenticate Firebase ID tokens and bind the verified
 purchase to the token's UID; never accept a UID string supplied by the
 client as proof of ownership. A backend writer and locked-down Firestore
 rules are still required. Purchase notifications (Google RTDN) and periodic
@@ -45,7 +45,7 @@ and account-association flow. Never grant server Premium from a client
 For new purchases, provision and persist a server-generated UUID `appAccountToken` bound to the authenticated Firebase UID *before* purchase. The expected UUID must be loaded from a trusted server record, never accepted from a client request. Existing transactions lacking this binding require an explicit secure restoration and ownership migration. Verify the App Store Apple ID in production when applicable.\n\nImplement App Store Server Notifications V2, idempotent transaction handling,
 and scheduled reconciliation. Keep lifetime access valid unless revoked.
 
-## Firebase entitlement storage and ownership\n\nThe Web repository currently has no deployable `firestore.rules` or `firebase.json` in this branch. Do not assume Firestore client write access is restricted. Before enabling: lock `premiumEntitlements/{uid}` against ALL client writes; use server-only Admin credentials; create a transaction ownership ledger keyed by `store + originalTransactionId` with an atomic claim to one UID; reject reassignment to a different UID; use verified notifications plus periodic reconciliation; and test legacy compatibility before deploying rules. Never replace an active entitlement with an inactive one based solely on a missing or transient failed verification.\n\n## Release blocker
+## Firebase entitlement storage and ownership\n\nThe Web repository currently has no deployable `firestore.rules` or `firebase.json` in this branch. Do not assume Firestore client write access is restricted. The pure purchase ownership decision module `app/lib/purchaseOwnershipPolicy.ts` is staged, with checks; it does NOT perform atomic Firestore transactions or claim purchases. Before enabling: lock `premiumEntitlements/{uid}` against ALL client writes; use server-only Admin credentials; create a transaction ownership ledger keyed by `store + originalTransactionId` with an atomic claim to one UID; reject reassignment to a different UID; use verified notifications plus periodic reconciliation; and test legacy compatibility before deploying rules. Never replace an active entitlement with an inactive one based solely on a missing or transient failed verification.\n\n## Release blocker
 
 **Do not set `SERVER_PREMIUM_ACCESS_ENABLED=true` on Vercel.** This is
 preparatory code, not a finished payment verification system. Legacy users

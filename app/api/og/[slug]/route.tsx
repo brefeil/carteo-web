@@ -1,5 +1,5 @@
 import { ImageResponse } from "next/og";
-import { getProfileBySlug } from "../../../lib/firestoreServer";
+import { getPublicProfileBySlug } from "../../../lib/firestoreServer";
 
 export const runtime = "nodejs";
 
@@ -9,7 +9,7 @@ export async function GET(
 ) {
   const { slug } = await params;
 
-  const profile = await getProfileBySlug(slug);
+  const profile = await getPublicProfileBySlug(slug);
 
   if (!profile || profile.isActive === false) {
     return new Response("Carte indisponible", { status: 404, headers: { "Cache-Control": "no-store" } });

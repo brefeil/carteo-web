@@ -184,3 +184,57 @@ export async function getProfileBySlug(slug: string) {
 
   return decodeFields(document.fields ?? {});
 }
+
+/**
+ * Staged server-side public access path. Opt-in ONLY after trusted entitlement
+ * verification and strict Firestore rules are deployed and tested.
+ *
+ * Current production remains on legacy behavior while this flag is unset.
+ */
+export async function getPublicProfileBySlug(slug: string) {
+  const profile = await getProfileBySlug(slug);
+  if (!profile) return null;
+
+  if (process.env.SERVER_PREMIUM_ACCESS_ENABLED !== "true") {
+    return profile;
+  }
+
+  // Fail closed: no trustworthy owner or primary designation -> no public card.
+  const ownerUID = typeof profile.ownerUID === "string" ? profile.ownerUID : "";
+  if (!ownerUID || profile.schemaVersion !== 2 ||
+      typeof profile.isPrimary !== "boolean") {
+    return null;
+  }
+
+  // Import lazily to keep the policy separate from legacy Firestore decoding.
+  const { decidePublicCardAccess, projectFreePublicCard } = await import("./publicCardAccess");
+  const token = await getAccessToken();
+  const entitlementUrl =
+    `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents/premiumEntitlements/${encodeURIComponent(ownerUID)}`;
+  const response = await fetch(entitlementUrl, {
+    headers: { Authorization: `Bearer ${token}` },
+    cache: "no-store",
+  });
+
+  // Missing entitlement means free tier; all other fetch errors fail closed.
+  let entitlement = null;
+  if (response.ok) {
+    const document = (await response.json()) as { fields?: Record<string, any> };
+    const data = decodeFields(document.fields ?? {});
+    entitlement = {
+      status: data.status === "active" ? "active" as const : "inactive" as const,
+      productType: data.productType === "lifetime" ? "lifetime" as const : "subscription" as const,
+      expiresAt: typeof data.expiresAt === "string" ? data.expiresAt : null,
+    };
+  } else if (response.status !== 404) {
+    throw new Error(`premium-entitlement-http-${response.status}`);
+  }
+
+  const decision = decidePublicCardAccess(profile.isPrimary, entitlement);
+  if (!decision.accessible) return null;
+
+  // The public page must never trust the client-controlled isPremium field.
+  return decision.premiumFeatures
+    ? { ...profile, isPremium: true }
+    : projectFreePublicCard(profile);
+}

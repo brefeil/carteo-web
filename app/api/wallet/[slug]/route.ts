@@ -1,4 +1,4 @@
-import { getProfileBySlug } from "../../../lib/firestoreServer";
+import { getPublicProfileBySlug } from "../../../lib/firestoreServer";
 import forge from "node-forge";
 import { PKPass } from "passkit-generator";
 
@@ -106,7 +106,7 @@ export async function GET(
       return new Response("Invalid profile", { status: 400 });
     }
 
-    const profile = await getProfileBySlug(slug);
+    const profile = await getPublicProfileBySlug(slug);
     if (!profile) {
       return new Response("Profile not found", { status: 404 });
     }

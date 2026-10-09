@@ -1,4 +1,4 @@
-import { getProfileBySlug } from "../../lib/firestoreServer";
+import { getPublicProfileBySlug } from "../../lib/firestoreServer";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -8,7 +8,7 @@ export async function GET(request: Request) {
     return new Response("Slug manquant", { status: 400 });
   }
 
-  const profile = await getProfileBySlug(slug);
+  const profile = await getPublicProfileBySlug(slug);
 
   // A disabled card must not remain downloadable through the public vCard URL.
   // Keep the reason for unavailability private.

@@ -22,10 +22,19 @@ export async function GET(request: Request) {
     .filter((url): url is string => url !== null)
     .map(url => "URL:" + escapeVCard(url));
 
+  const givenName = String(profile.firstName ?? "").trim();
+  const familyName = String(profile.lastName ?? "").trim();
+  const displayName = String(profile.name ?? [givenName, familyName].filter(Boolean).join(" ")).trim();
+  // vCard N uses family;given;additional;prefix;suffix, separate from FN.
+  const structuredName = givenName || familyName
+    ? [familyName, givenName, "", "", ""].map(escapeVCard).join(";")
+    : [displayName, "", "", "", ""].map(escapeVCard).join(";");
+
   const lines = [
     "BEGIN:VCARD",
     "VERSION:3.0",
-    "FN:" + escapeVCard(profile.name),
+    "FN:" + escapeVCard(displayName),
+    "N:" + structuredName,
     "ORG:" + escapeVCard(profile.company),
     "TITLE:" + escapeVCard(profile.title),
     "TEL:" + escapeVCard(profile.phone),

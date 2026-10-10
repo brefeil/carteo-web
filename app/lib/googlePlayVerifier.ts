@@ -67,6 +67,7 @@ async function playAccessToken(): Promise<string> {
       assertion,
     }),
     cache: "no-store",
+    signal: AbortSignal.timeout(15000),
   });
   if (!response.ok) throw new Error(`play-oauth-http-${response.status}`);
   const body = (await response.json()) as { access_token?: string };
@@ -93,7 +94,9 @@ async function playGet(path: string): Promise<Record<string, unknown>> {
   const response = await fetch(`https://androidpublisher.googleapis.com/androidpublisher/v3/${path}`, {
     headers: { Authorization: `Bearer ${token}` },
     cache: "no-store",
+    signal: AbortSignal.timeout(15000),
   });
+  if (response.status === 404 || response.status === 410) return {};
   if (!response.ok) throw new Error(`play-api-http-${response.status}`);
   return (await response.json()) as Record<string, unknown>;
 }
@@ -119,7 +122,8 @@ export async function verifyGooglePlayPurchase(
       | undefined;
     if (external?.obfuscatedExternalAccountId !== expectedAccount) return null;
     if (data.subscriptionState !== "SUBSCRIPTION_STATE_ACTIVE" &&
-        data.subscriptionState !== "SUBSCRIPTION_STATE_IN_GRACE_PERIOD") return null;
+        data.subscriptionState !== "SUBSCRIPTION_STATE_IN_GRACE_PERIOD" &&
+        data.subscriptionState !== "SUBSCRIPTION_STATE_CANCELED") return null;
     const items = Array.isArray(data.lineItems) ? data.lineItems as Array<Record<string, unknown>> : [];
     const validItem = items.find(item =>
       item.productId === productId &&

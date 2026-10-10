@@ -1,0 +1,15 @@
+// STAGING ONLY. Never replace production rules before the coordinated iOS migration.
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /profiles/{slug} {
+      allow read: if true;
+      // All staged profile mutations go through the authenticated Admin API.
+      allow write: if false;
+    }
+    match /{document=**} {
+      // Purchase tokens, account metadata, rate limits and entitlements are server-only.
+      allow read, write: if false;
+    }
+  }
+}

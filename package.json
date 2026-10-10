@@ -6,26 +6,31 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test:android": "node --import tsx --test tests/android-policy.test.ts tests/google-play.test.ts",
+    "test:android:emulator": "firebase emulators:exec --project demo-carteo-api --only firestore --config firebase.android-test.json \"node --import tsx --test tests/android-firestore.test.ts\""
   },
   "dependencies": {
     "firebase": "^12.15.0",
+    "firebase-admin": "^14.5.0",
     "next": "16.2.9",
+    "node-forge": "^1.4.0",
+    "passkit-generator": "^3.6.1",
     "react": "19.2.4",
     "react-dom": "19.2.4",
-    "react-icons": "^5.6.0",
-    "node-forge": "^1.4.0",
-    "passkit-generator": "^3.6.1"
+    "react-icons": "^5.6.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
+    "@types/node-forge": "^1.3.14",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.9",
+    "firebase-tools": "^15.33.0",
     "tailwindcss": "^4",
-    "typescript": "^5",
-    "@types/node-forge": "^1.3.14"
+    "tsx": "^4.23.15",
+    "typescript": "^5"
   }
 }

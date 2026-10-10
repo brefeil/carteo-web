@@ -80,3 +80,36 @@ Official implementation references:
 - https://developer.android.com/google/play/billing/integrate
 - https://firebase.google.com/docs/auth/admin/verify-id-tokens
 - https://firebase.google.com/docs/firestore/manage-data/transactions
+
+## Card lifecycle additions — 2026-10-10
+
+- `POST /api/android/cards/delete` accepts only `{ "publicSlug": "…" }`.
+  Owner verification and schema-3 migration are mandatory. Deletion uses the
+  same account transaction lock as saving and does not contact Google Play.
+- Deleted slugs are permanently reserved in private `androidDeletedCards` so a
+  stale QR cannot be reassigned through this API. This protection requires the
+  staged rules denying direct profile writes; it is not a production guarantee.
+- Deleting a primary promotes a remaining active managed card deterministically;
+  explicitly disabled cards stay disabled. Deleting the last card frees the slot.
+- Avatar deletion targets only `avatars/{uid}/{slug}.jpg`. Failures are retained
+  in private `androidAvatarCleanup`; repeating the endpoint retries cleanup.
+  A scheduled retry worker and an upload rule preventing late uploads to retired
+  slugs are release gates. Existing downloaded Wallet passes cannot be erased
+  from a user's device by this operation.
+- Android exposes a confirmation only in API-enabled builds with a fresh server
+  snapshot. Failures retain the card; success clears its local saved-card cache.
+- Free presentation hides surplus socials and paid themes without overwriting
+  stored data. Editing uses the original card, and renewing restores its display.
+
+## Full account deletion — deliberately not exposed yet
+
+Before implementing the destructive endpoint, reconcile ownership for legacy
+profiles and inventory the current iOS branch. Required sequence: recent login;
+server deletion lock checked by card/purchase writes; revoke sessions; retire all
+owned slugs; remove owned images and private profile data with resumable retries;
+handle StoreKit/Play proof bindings without allowing proof reassignment; remove
+Firebase Auth last; clear client caches. Do not simply call Auth.deleteUser:
+that would leave public cards/images behind and make owner retries impossible.
+Subscription cancellation remains a separate store action. Define a minimal
+retention policy for anti-replay purchase records and slug tombstones before
+exposing the flow. No production accounts were deleted during this work.

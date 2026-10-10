@@ -1,4 +1,5 @@
 import { getProfileBySlug } from "../../lib/firestoreServer";
+import { socialProfileUrl } from "../../lib/socialProfileUrl";
 import {
   FaInstagram,
   FaTiktok,
@@ -77,12 +78,12 @@ export default async function PublicProfilePage({
  
 
 const socialLinks = [
-  { title: "Instagram", value: profile.instagram, icon: <FaInstagram /> },
-  { title: "Snapchat", value: profile.snapchat, icon: <FaSnapchatGhost /> },
-  { title: "TikTok", value: profile.tiktok, icon: <FaTiktok /> },
-  { title: "Facebook", value: profile.facebook, icon: <FaFacebook /> },
-  { title: "YouTube", value: profile.youtube, icon: <FaYoutube /> },
-].filter((item) => item.value);
+  { title: "Instagram", value: socialProfileUrl("instagram", profile.instagram), icon: <FaInstagram /> },
+  { title: "Snapchat", value: socialProfileUrl("snapchat", profile.snapchat), icon: <FaSnapchatGhost /> },
+  { title: "TikTok", value: socialProfileUrl("tiktok", profile.tiktok), icon: <FaTiktok /> },
+  { title: "Facebook", value: socialProfileUrl("facebook", profile.facebook), icon: <FaFacebook /> },
+  { title: "YouTube", value: socialProfileUrl("youtube", profile.youtube), icon: <FaYoutube /> },
+].filter((item) => item.value !== null);
 
 const visibleSocialLinks = isPremium ? socialLinks : socialLinks.slice(0, 1);
 
@@ -147,8 +148,8 @@ if (!isActive) {
       {profile.phone && <a href={`tel:${profile.phone}`} style={linkStyle}>📞 {profile.phone}</a>}
       {profile.email && <a href={`mailto:${profile.email}`} style={linkStyle}>✉️ {profile.email}</a>}
       {profile.website && <a href={profile.website} target="_blank" style={linkStyle}>🌐 Site web</a>}
-      {profile.linkedin && (
-  <a href={profile.linkedin} target="_blank" style={linkStyle}>
+      {socialProfileUrl("linkedin", profile.linkedin) && (
+  <a href={socialProfileUrl("linkedin", profile.linkedin)!} target="_blank" rel="noopener noreferrer" style={linkStyle}>
     <FaLinkedin size={24}/> LinkedIn
   </a>
 )}
@@ -156,8 +157,9 @@ if (!isActive) {
 {visibleSocialLinks.map((item) => (
   <a
     key={item.title}
-    href={item.value}
+    href={item.value!}
     target="_blank"
+    rel="noopener noreferrer"
     style={linkStyle}
   >
     {item.icon}

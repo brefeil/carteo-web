@@ -84,6 +84,7 @@ const socialLinks = [
   { title: "TikTok", value: socialProfileUrl("tiktok", profile.tiktok), icon: <FaTiktok /> },
   { title: "Facebook", value: socialProfileUrl("facebook", profile.facebook), icon: <FaFacebook /> },
   { title: "YouTube", value: socialProfileUrl("youtube", profile.youtube), icon: <FaYoutube /> },
+  { title: "X", value: socialProfileUrl("x", profile.x), icon: <span aria-hidden="true">𝕏</span> },
 ].filter((item) => item.value !== null);
 
 const visibleSocialLinks = isPremium ? socialLinks : socialLinks.slice(0, 1);

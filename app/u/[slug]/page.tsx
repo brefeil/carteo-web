@@ -78,6 +78,7 @@ export default async function PublicProfilePage({
  
 
 const socialLinks = [
+  { title: "LinkedIn", value: socialProfileUrl("linkedin", profile.linkedin), icon: <FaLinkedin /> },
   { title: "Instagram", value: socialProfileUrl("instagram", profile.instagram), icon: <FaInstagram /> },
   { title: "Snapchat", value: socialProfileUrl("snapchat", profile.snapchat), icon: <FaSnapchatGhost /> },
   { title: "TikTok", value: socialProfileUrl("tiktok", profile.tiktok), icon: <FaTiktok /> },
@@ -148,12 +149,6 @@ if (!isActive) {
       {profile.phone && <a href={`tel:${profile.phone}`} style={linkStyle}>📞 {profile.phone}</a>}
       {profile.email && <a href={`mailto:${profile.email}`} style={linkStyle}>✉️ {profile.email}</a>}
       {profile.website && <a href={profile.website} target="_blank" style={linkStyle}>🌐 Site web</a>}
-      {socialProfileUrl("linkedin", profile.linkedin) && (
-  <a href={socialProfileUrl("linkedin", profile.linkedin)!} target="_blank" rel="noopener noreferrer" style={linkStyle}>
-    <FaLinkedin size={24}/> LinkedIn
-  </a>
-)}
-
 {visibleSocialLinks.map((item) => (
   <a
     key={item.title}

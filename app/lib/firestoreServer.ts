@@ -13,7 +13,7 @@ export function serviceAccountEmail() {
     process.env.GOOGLE_WALLET_SERVICE_ACCOUNT_EMAIL ||
     process.env.GOOGLE_WALLET_ACCOUNT_EMAIL;
   if (!value) {
-    throw new Error("Missing environment variable: GOOGLE_WALLET_SERVICE_ACCOUNT_EMAIL");
+    throw new Error("Firestore authentication is not configured: set GOOGLE_WALLET_SERVICE_ACCOUNT_EMAIL or GOOGLE_WALLET_ACCOUNT_EMAIL in the deployment environment (and in .env.local for local development).");
   }
   return value.trim();
 }

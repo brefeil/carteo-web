@@ -182,31 +182,3 @@ export async function getFirestoreDocument(collection: string, id: string) {
 export async function getProfileBySlug(slug: string) {
   return getFirestoreDocument("profiles", slug);
 }
-
-/* Legacy implementation retained below for review:
-export async function legacyGetProfileBySlug(slug: string) {
-  const safeSlug = slug.trim();
-  if (!safeSlug || safeSlug.includes("/")) return null;
-
-  const token = await getAccessToken();
-  const url =
-    `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents/profiles/${encodeURIComponent(safeSlug)}`;
-
-  const response = await fetch(url, {
-    headers: { Authorization: `Bearer ${token}` },
-    cache: "no-store",
-  });
-
-  if (response.status === 404) return null;
-  if (!response.ok) {
-    throw new Error(`firestore-http-${response.status}`);
-  }
-
-  const document = (await response.json()) as {
-    fields?: Record<string, any>;
-  };
-
-  return decodeFields(document.fields ?? {});
-}
-
-*/

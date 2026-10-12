@@ -1,3 +1,4 @@
+import { hasVerifiedPremium } from "../../lib/premiumEntitlement";
 import { getProfileBySlug } from "../../lib/firestoreServer";
 import { socialProfileUrl } from "../../lib/socialProfileUrl";
 
@@ -85,7 +86,7 @@ export async function GET(request: Request) {
     .filter((url): url is string => url !== null);
   // Same free-tier social count as the public card. Premium validity must also
   // be synchronized server-side; do not assume the Firestore flag is authoritative.
-  const visibleUrls = profile.isPremium === true ? socialUrls : socialUrls.slice(0, 1);
+  const visibleUrls = (await hasVerifiedPremium(profile)) ? socialUrls : socialUrls.slice(0, 1);
 
   let givenName = String(profile.firstName ?? "").trim();
   let familyName = String(profile.lastName ?? "").trim();

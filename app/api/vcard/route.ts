@@ -80,13 +80,19 @@ export async function GET(request: Request) {
   if (!profile) return new Response("Profil introuvable", { status: 404 });
   if (profile.isActive === false) return new Response("Carte inactive", { status: 404 });
 
-  const platforms = ["instagram", "tiktok", "snapchat", "facebook", "linkedin", "youtube", "x"] as const;
+  const platforms = ["linkedin", "instagram", "tiktok", "snapchat", "facebook", "youtube", "x"] as const;
   const socialUrls = platforms
     .map(platform => socialProfileUrl(platform, profile[platform]))
     .filter((url): url is string => url !== null);
   // Same free-tier social count as the public card. Premium validity must also
   // be synchronized server-side; do not assume the Firestore flag is authoritative.
-  const visibleUrls = (await hasVerifiedPremium(profile)) ? socialUrls : socialUrls.slice(0, 1);
+  const selectedNetwork = typeof profile.selectedSocialNetwork === "string"
+    ? profile.selectedSocialNetwork.toLowerCase() : "";
+  const selectedUrl = platforms.includes(selectedNetwork as typeof platforms[number])
+    ? socialProfileUrl(selectedNetwork as typeof platforms[number], profile[selectedNetwork])
+    : null;
+  const visibleUrls = (await hasVerifiedPremium(profile))
+    ? socialUrls : selectedUrl ? [selectedUrl] : socialUrls.slice(0, 1);
 
   let givenName = String(profile.firstName ?? "").trim();
   let familyName = String(profile.lastName ?? "").trim();

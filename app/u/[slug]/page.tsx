@@ -1,3 +1,4 @@
+import { hasVerifiedPremium } from "../../lib/premiumEntitlement";
 import { getProfileBySlug } from "../../lib/firestoreServer";
 import { socialProfileUrl } from "../../lib/socialProfileUrl";
 import {
@@ -74,7 +75,7 @@ export default async function PublicProfilePage({
   }
 
   const isActive = profile.isActive !== false;
-  const isPremium = profile.isPremium === true;
+  const isPremium = await hasVerifiedPremium(profile);
  
 
 const socialLinks = [

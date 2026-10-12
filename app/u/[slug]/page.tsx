@@ -88,7 +88,10 @@ const socialLinks = [
   { title: "X", value: socialProfileUrl("x", profile.x), icon: <span aria-hidden="true">𝕏</span> },
 ].filter((item) => item.value !== null);
 
-const visibleSocialLinks = isPremium ? socialLinks : socialLinks.slice(0, 1);
+const selectedNetwork = typeof profile.selectedSocialNetwork === "string"
+  ? profile.selectedSocialNetwork.toLowerCase() : "";
+const selectedLink = socialLinks.find(item => item.title.toLowerCase() === selectedNetwork);
+const visibleSocialLinks = isPremium ? socialLinks : selectedLink ? [selectedLink] : socialLinks.slice(0, 1);
 
 if (!isActive) {
   return (

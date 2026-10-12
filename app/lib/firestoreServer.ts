@@ -160,7 +160,31 @@ function decodeFields(fields: Record<string, any>) {
   );
 }
 
+export async function getFirestoreDocument(collection: string, id: string) {
+  if (!["profiles", "entitlements"].includes(collection)) return null;
+  const safeId = id.trim();
+  if (!safeId || safeId.includes("/")) return null;
+
+  const token = await getAccessToken();
+  const url =
+    `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents/${collection}/${encodeURIComponent(safeId)}`;
+
+  const response = await fetch(url, {
+    headers: { Authorization: `Bearer ${token}` },
+    cache: "no-store",
+  });
+  if (response.status === 404) return null;
+  if (!response.ok) throw new Error(`firestore-http-${response.status}`);
+  const document = (await response.json()) as { fields?: Record<string, any> };
+  return decodeFields(document.fields ?? {});
+}
+
 export async function getProfileBySlug(slug: string) {
+  return getFirestoreDocument("profiles", slug);
+}
+
+/* Legacy implementation retained below for review:
+export async function legacyGetProfileBySlug(slug: string) {
   const safeSlug = slug.trim();
   if (!safeSlug || safeSlug.includes("/")) return null;
 
@@ -184,3 +208,5 @@ export async function getProfileBySlug(slug: string) {
 
   return decodeFields(document.fields ?? {});
 }
+
+*/

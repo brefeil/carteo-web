@@ -78,14 +78,16 @@ export default async function PublicProfilePage({
  
 
 const socialLinks = [
-  { title: "Instagram", value: socialProfileUrl("instagram", profile.instagram), icon: <FaInstagram /> },
-  { title: "Snapchat", value: socialProfileUrl("snapchat", profile.snapchat), icon: <FaSnapchatGhost /> },
-  { title: "TikTok", value: socialProfileUrl("tiktok", profile.tiktok), icon: <FaTiktok /> },
-  { title: "Facebook", value: socialProfileUrl("facebook", profile.facebook), icon: <FaFacebook /> },
-  { title: "YouTube", value: socialProfileUrl("youtube", profile.youtube), icon: <FaYoutube /> },
+  { title: "Instagram", key: "instagram", value: socialProfileUrl("instagram", profile.instagram), icon: <FaInstagram /> },
+  { title: "Snapchat", key: "snapchat", value: socialProfileUrl("snapchat", profile.snapchat), icon: <FaSnapchatGhost /> },
+  { title: "TikTok", key: "tiktok", value: socialProfileUrl("tiktok", profile.tiktok), icon: <FaTiktok /> },
+  { title: "Facebook", key: "facebook", value: socialProfileUrl("facebook", profile.facebook), icon: <FaFacebook /> },
+  { title: "YouTube", key: "youtube", value: socialProfileUrl("youtube", profile.youtube), icon: <FaYoutube /> },
+  { title: "LinkedIn", key: "linkedin", value: socialProfileUrl("linkedin", profile.linkedin), icon: <FaLinkedin /> },
 ].filter((item) => item.value !== null);
 
-const visibleSocialLinks = isPremium ? socialLinks : socialLinks.slice(0, 1);
+const selectedSocialLink = socialLinks.find((item) => item.key === profile.selectedSocialNetwork);
+const visibleSocialLinks = isPremium ? socialLinks : (selectedSocialLink ? [selectedSocialLink] : socialLinks.slice(0, 1));
 
 if (!isActive) {
   return (
@@ -148,12 +150,6 @@ if (!isActive) {
       {profile.phone && <a href={`tel:${profile.phone}`} style={linkStyle}>📞 {profile.phone}</a>}
       {profile.email && <a href={`mailto:${profile.email}`} style={linkStyle}>✉️ {profile.email}</a>}
       {profile.website && <a href={profile.website} target="_blank" style={linkStyle}>🌐 Site web</a>}
-      {socialProfileUrl("linkedin", profile.linkedin) && (
-  <a href={socialProfileUrl("linkedin", profile.linkedin) ?? "#"} target="_blank" style={linkStyle}>
-    <FaLinkedin size={24}/> LinkedIn
-  </a>
-)}
-
 {visibleSocialLinks.map((item) => (
   <a
     key={item.title}

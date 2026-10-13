@@ -16,7 +16,7 @@ function token(): string {
 export type AppleTransactionResponse = { signedTransactionInfo?: string };
 /** Raw signed transaction response; verify JWS signature and certificate chain before trusting claims. */
 export async function getAppleTransaction(transactionId: string, environment: "Production" | "Sandbox"): Promise<AppleTransactionResponse> {
-  if (!/^\\d{6,30}$/.test(transactionId)) throw new Error("invalid-apple-transaction-id");
+  if (!/^\d{6,30}$/.test(transactionId)) throw new Error("invalid-apple-transaction-id");
   const base = environment === "Production" ? "https://api.storekit.itunes.apple.com" : "https://api.storekit-sandbox.itunes.apple.com";
   const response = await fetch(base + "/inApps/v1/transactions/" + encodeURIComponent(transactionId), { headers: { Authorization: "Bearer " + token() }, cache: "no-store" });
   if (!response.ok) throw new Error("apple-api-" + response.status);

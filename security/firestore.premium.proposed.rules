@@ -1,0 +1,23 @@
+// REVIEW BEFORE DEPLOYMENT: migrate legacy profiles and verify actual Firebase UID ownership.
+// Do not deploy these rules without testing existing cards and client write flows.
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function owner() { return signedIn() && resource.data.ownerUID == request.auth.uid; }
+    function premiumFields() { return ['premiumEntitlement', 'isPremium', 'premium', 'premiumExpiresAt', 'premiumSource']; }
+    function protectedFields() { return premiumFields().concat(['ownerUID']); }
+    match /profiles/{slug} {
+      allow read: if true;
+      // A card may only be created by its authenticated owner; premium cannot be self-assigned.
+      allow create: if signedIn()
+        && request.resource.data.ownerUID == request.auth.uid
+        && !request.resource.data.keys().hasAny(premiumFields());
+      // Keep all saved networks; do not let a client alter its verified entitlement or ownership.
+      allow update: if owner()
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(protectedFields());
+      allow delete: if owner();
+    }
+    // Any additional collections require explicitly audited rules, not a wildcard allow.
+  }
+}

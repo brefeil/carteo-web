@@ -18,7 +18,7 @@ async function accessToken(): Promise<string> {
   const unsigned = header + "." + payload;
   const signer = createSign("RSA-SHA256"); signer.update(unsigned); signer.end();
   const assertion = unsigned + "." + signer.sign(account.private_key.replace(/\\n/g, "\n")).toString("base64url");
-  const response = await fetch("https://oauth2.googleapis.com/token", { method: "POST", headers: { "content-type": "application/x-www-form-urlencoded" }, body: new URLSearchParams({ grant_type: "urn:ietf:params:oauth:grant-bearer", assertion }), cache: "no-store" });
+  const response = await fetch("https://oauth2.googleapis.com/token", { method: "POST", headers: { "content-type": "application/x-www-form-urlencoded" }, body: new URLSearchParams({ grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer", assertion }), cache: "no-store" });
   if (!response.ok) throw new Error("google-oauth-" + response.status);
   const json = await response.json() as { access_token?: string };
   if (!json.access_token) throw new Error("google-oauth-token-missing");

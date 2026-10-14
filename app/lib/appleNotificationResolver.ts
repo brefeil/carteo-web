@@ -24,6 +24,7 @@ export async function resolveAppleNotification(signedPayload: string, environmen
   }, subscriptions, lifetime, environment);
   return {
     notificationUUID: notification.notificationUUID,
+    signedDate: notification.signedDate,
     notificationType: notification.notificationType,
     subtype: notification.subtype,
     originalTransactionId: transaction.originalTransactionId,

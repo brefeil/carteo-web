@@ -22,6 +22,17 @@ export async function resolveAppleNotification(signedPayload: string, environmen
     revocationDate: transaction.revocationDate,
     environment,
   }, subscriptions, lifetime, environment);
+  // Terminal events must not leave a previously active entitlement enabled.
+  // Unknown events are rejected until their entitlement semantics are reviewed.
+  const eventType = notification.notificationType;
+  if (eventType === "REFUND" || eventType === "REVOKE") {
+    decision.status = "revoked";
+    decision.expiresAt = null;
+  } else if (eventType === "EXPIRED" || eventType === "GRACE_PERIOD_EXPIRED") {
+    decision.status = "expired";
+  } else if (!["SUBSCRIBED", "DID_RENEW", "DID_RECOVER", "DID_CHANGE_RENEWAL_PREF", "DID_CHANGE_RENEWAL_STATUS", "DID_FAIL_TO_RENEW", "OFFER_REDEEMED", "PRICE_INCREASE", "RENEWAL_EXTENDED", "REFUND_DECLINED", "CONSUMPTION_REQUEST", "TEST"].includes(eventType ?? "")) {
+    throw new Error("unsupported-apple-notification-type");
+  }
   return {
     notificationUUID: notification.notificationUUID,
     signedDate: notification.signedDate,

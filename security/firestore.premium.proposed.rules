@@ -1,23 +1,34 @@
-// REVIEW BEFORE DEPLOYMENT: migrate legacy profiles and verify actual Firebase UID ownership.
-// Do not deploy these rules without testing existing cards and client write flows.
+// Transitional Firestore rules for Cartéo Connect.
+// Remove the legacy profile branch after the mobile migration window (target: November 2026),
+// ONLY after confirming that no legitimate old clients still depend on it.
+// IMPORTANT: Legacy write access is intentionally restricted to already-existing documents.
+// Never allow a legacy client to create a new unowned card.
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() { return request.auth != null; }
-    function owner() { return signedIn() && resource.data.ownerUID == request.auth.uid; }
     function premiumFields() { return ['premiumEntitlement', 'isPremium', 'premium', 'premiumExpiresAt', 'premiumSource']; }
     function protectedFields() { return premiumFields().concat(['ownerUID']); }
+    function ownedCard() { return signedIn() && resource.data.get('ownerUID', '') == request.auth.uid; }
+    function legacyCard() { return !resource.data.keys().hasAny(['ownerUID']); }
     match /profiles/{slug} {
       allow read: if true;
-      // A card may only be created by its authenticated owner; premium cannot be self-assigned.
+      // New cards require a verified Firebase session and immutable owner UID.
       allow create: if signedIn()
         && request.resource.data.ownerUID == request.auth.uid
         && !request.resource.data.keys().hasAny(premiumFields());
-      // Keep all saved networks; do not let a client alter its verified entitlement or ownership.
-      allow update: if owner()
+      // New owned cards: never allow mobile clients to change owner or verified premium.
+      allow update: if ownedCard()
         && !request.resource.data.diff(resource.data).affectedKeys().hasAny(protectedFields());
-      allow delete: if owner();
+      allow delete: if ownedCard();
+      // Existing legacy cards can keep non-privileged fields, but cannot self-assign
+      // ownership or premium. Existing legacy write authorization MUST be checked
+      // against the live deployed rules before enabling any broader exception.
+      allow update: if legacyCard()
+        && signedIn()
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(protectedFields());
+      // No legacy create or delete permission is added.
     }
-    // Any additional collections require explicitly audited rules, not a wildcard allow.
+    // Other collections require an explicit review of existing production rules.
   }
 }

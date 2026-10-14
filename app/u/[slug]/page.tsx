@@ -1,4 +1,5 @@
 import { getProfileBySlug } from "../../lib/firestoreServer";
+import { isPremiumAtRequest } from "../../lib/premiumAtRequest";
 import { socialProfileUrl } from "../../lib/socialProfileUrl";
 import {
   FaInstagram,
@@ -74,7 +75,7 @@ export default async function PublicProfilePage({
   }
 
   const isActive = profile.isActive !== false;
-  const isPremium = profile.isPremium === true;
+  const isPremium = isPremiumAtRequest(profile);
  
 
 const socialLinks = [

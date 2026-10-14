@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
       uid, originalTransactionId: event.originalTransactionId,
       transactionId: event.transactionId, productId: event.productId,
       decision: event.decision,
-      eventTime: Date.now(),
+      eventTime: event.signedDate,
     });
     return NextResponse.json({ received: true, linked: true, updatedCards });
   } catch {

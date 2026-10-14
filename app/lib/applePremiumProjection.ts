@@ -36,6 +36,8 @@ export async function projectApplePremiumToOwnerCards(input: {
     // Never overwrite a different account's administrative gift or Google subscription.
     if (previous?.verificationStatus?.stringValue === "verified" &&
         previous?.source?.stringValue !== "apple") continue;
+    // Do not overwrite an entitlement belonging to a different Apple subscription.
+    if (previous?.source?.stringValue === "apple" && previous?.originalTransactionId?.stringValue && previous.originalTransactionId.stringValue !== input.originalTransactionId) continue;
     const previousEvent = Date.parse(previous?.eventAt?.stringValue ?? "");
     if (Number.isFinite(previousEvent) && previousEvent > eventTime) continue;
     const entitlement: Record<string, FirestoreValue | { nullValue: null }> = {

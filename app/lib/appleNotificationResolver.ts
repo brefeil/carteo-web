@@ -30,7 +30,7 @@ export async function resolveAppleNotification(signedPayload: string, environmen
     decision.expiresAt = null;
   } else if (eventType === "EXPIRED" || eventType === "GRACE_PERIOD_EXPIRED") {
     decision.status = "expired";
-  } else if (!["SUBSCRIBED", "DID_RENEW", "DID_RECOVER", "OFFER_REDEEMED", "RENEWAL_EXTENDED", "REFUND_DECLINED"].includes(eventType ?? "")) {
+  } else if (!["SUBSCRIBED", "DID_RENEW", "DID_RECOVER", "OFFER_REDEEMED", "RENEWAL_EXTENDED"].includes(eventType ?? "")) {
     throw new Error("unsupported-apple-notification-type");
   }
   return {

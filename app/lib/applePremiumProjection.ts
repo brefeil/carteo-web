@@ -2,7 +2,7 @@ import { firestoreAdminAccessToken, firestoreDocumentsBase } from "./firebasePre
 import type { ApplePremiumDecision } from "./applePremiumDecision";
 
 type FirestoreValue = { stringValue?: string; booleanValue?: boolean; mapValue?: { fields?: Record<string, FirestoreValue> } };
-type FirestoreDocument = { name?: string; fields?: Record<string, FirestoreValue> };
+type FirestoreDocument = { name?: string; updateTime?: string; fields?: Record<string, FirestoreValue> };
 const base = firestoreDocumentsBase;
 const headers = (token: string) => ({ Authorization: "Bearer " + token, "content-type": "application/json" });
 
@@ -39,7 +39,7 @@ export async function projectApplePremiumToOwnerCards(input: {
     // Do not overwrite an entitlement belonging to a different Apple subscription.
     if (previous?.source?.stringValue === "apple" && previous?.originalTransactionId?.stringValue && previous.originalTransactionId.stringValue !== input.originalTransactionId) continue;
     const previousEvent = Date.parse(previous?.eventAt?.stringValue ?? "");
-    if (Number.isFinite(previousEvent) && previousEvent > eventTime) continue;
+    if (Number.isFinite(previousEvent) && previousEvent >= eventTime) continue;
     const entitlement: Record<string, FirestoreValue | { nullValue: null }> = {
       verificationStatus: { stringValue: "verified" },
       source: { stringValue: "apple" },
@@ -51,8 +51,9 @@ export async function projectApplePremiumToOwnerCards(input: {
       eventAt: { stringValue: new Date(eventTime).toISOString() },
     };
     entitlement.expiresAt = input.decision.expiresAt ? { stringValue: input.decision.expiresAt } : { nullValue: null };
+    if (!card.updateTime) throw new Error("missing-card-update-time");
     const url = "https://firestore.googleapis.com/v1/" + card.name +
-      "?updateMask.fieldPaths=premiumEntitlement&currentDocument.exists=true";
+      "?updateMask.fieldPaths=premiumEntitlement&currentDocument.updateTime=" + encodeURIComponent(card.updateTime ?? "");
     const response = await fetch(url, {
       method: "PATCH", headers: headers(token), cache: "no-store",
       body: JSON.stringify({ fields: { premiumEntitlement: { mapValue: { fields: entitlement } } } }),

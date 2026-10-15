@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
     const decision = applePremiumDecision({ productId: transaction.productId, transactionId: transaction.transactionId, originalTransactionId: transaction.originalTransactionId, expiresDate: transaction.expiresDate, revocationDate: transaction.revocationDate, environment: body.environment }, subscriptions, lifetime, body.environment);
     if (!appleAccountTokenMatchesUid(transaction.appAccountToken, uid)) return NextResponse.json({ error: "purchase-owner-mismatch" }, { status: 403 });
     await bindVerifiedAppleTransaction(transaction.originalTransactionId, uid);
-    const updatedCards = await projectApplePremiumToOwnerCards({ uid, originalTransactionId: transaction.originalTransactionId, transactionId: transaction.transactionId, productId: transaction.productId, decision, eventTime: Date.now() });
+    const updatedCards = await projectApplePremiumToOwnerCards({ uid, originalTransactionId: transaction.originalTransactionId, transactionId: transaction.transactionId, productId: transaction.productId, decision, eventTime: transaction.purchaseDate ?? 0 });
     return NextResponse.json({ verified: true, bound: true, status: decision.status, entitlementGranted: decision.status === "active" && updatedCards > 0, updatedCards });
   } catch {
     return NextResponse.json({ error: "purchase-verification-failed" }, { status: 422 });

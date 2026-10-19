@@ -39,6 +39,13 @@ export async function POST(request: NextRequest) {
   } catch (caught) {
     // Public diagnostics are fixed categories, not raw Apple exceptions or identifiers.
     const message = caught instanceof Error ? caught.message.toLowerCase() : "";
+    const errorName = caught instanceof Error ? caught.name : "unknown";
+    const safeErrorType = ["VerificationException", "APIException", "Error"].includes(errorName) ? errorName : "other";
+    const signatureCheck = message.includes("signature") ? "signature"
+      : message.includes("certificate") || message.includes("chain") || message.includes("trust") ? "trust-chain"
+      : message.includes("bundle") || message.includes("app id") || message.includes("environment") ? "signed-claims"
+      : message.includes("jws") || message.includes("jwt") ? "jws"
+      : "unspecified";
     const reason = stage !== "apple-transaction" ? "other-stage"
       : message.includes("missing apple") || message.includes("invalid apple_app_id") ? "server-configuration"
       : message.includes("invalid-signed-transaction") ? "invalid-jws-format"
@@ -46,7 +53,7 @@ export async function POST(request: NextRequest) {
       : message.includes("environment") || message.includes("bundle") || message.includes("app id") ? "signed-claims-mismatch"
       : message.includes("signature") || message.includes("verification") || message.includes("verify") ? "signed-transaction-verification"
       : "apple-transaction-unknown";
-    console.error("[premium/apple] failed:", stage, reason);
-    return NextResponse.json({ error: "purchase-verification-failed", stage, reason }, { status: 422 });
+    console.error("[premium/apple] failed:", stage, reason, safeErrorType, signatureCheck);
+    return NextResponse.json({ error: "purchase-verification-failed", stage, reason, verificationType: safeErrorType, verificationArea: signatureCheck }, { status: 422 });
   }
 }

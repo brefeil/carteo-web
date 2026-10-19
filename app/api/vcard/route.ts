@@ -1,5 +1,6 @@
 import { getProfileBySlug } from "../../lib/firestoreServer";
 import { socialProfileUrl } from "../../lib/socialProfileUrl";
+import { isPremiumAtRequest } from "../../lib/premiumAtRequest";
 
 function escapeVCard(value: unknown): string {
   return String(value ?? "").replace(/\\/g, "\\\\").replace(/\r\n|\r|\n/g, "\\n").replace(/;/g, "\\;").replace(/,/g, "\\,");
@@ -79,13 +80,15 @@ export async function GET(request: Request) {
   if (!profile) return new Response("Profil introuvable", { status: 404 });
   if (profile.isActive === false) return new Response("Carte inactive", { status: 404 });
 
-  const platforms = ["instagram", "tiktok", "snapchat", "facebook", "linkedin", "youtube", "x"] as const;
-  const socialUrls = platforms
-    .map(platform => socialProfileUrl(platform, profile[platform]))
-    .filter((url): url is string => url !== null);
-  // Same free-tier social count as the public card. Premium validity must also
-  // be synchronized server-side; do not assume the Firestore flag is authoritative.
-  const visibleUrls = profile.isPremium === true ? socialUrls : socialUrls.slice(0, 1);
+  // Match the public card's trusted Premium decision and social selection.
+  const platforms = ["instagram", "snapchat", "tiktok", "facebook", "youtube", "linkedin"] as const;
+  const socialLinks = platforms
+    .map(platform => ({ platform, url: socialProfileUrl(platform, profile[platform]) }))
+    .filter((entry): entry is { platform: typeof platforms[number]; url: string } => entry.url !== null);
+  const selected = socialLinks.find(entry => entry.platform === profile.selectedSocialNetwork);
+  const visibleUrls = (isPremiumAtRequest(profile)
+    ? socialLinks
+    : selected ? [selected] : socialLinks.slice(0, 1)).map(entry => entry.url);
 
   let givenName = String(profile.firstName ?? "").trim();
   let familyName = String(profile.lastName ?? "").trim();

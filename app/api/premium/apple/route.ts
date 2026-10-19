@@ -46,7 +46,10 @@ export async function POST(request: NextRequest) {
       : message.includes("bundle") || message.includes("app id") || message.includes("environment") ? "signed-claims"
       : message.includes("jws") || message.includes("jwt") ? "jws"
       : "unspecified";
+    const knownVerifierCodes = ["apple-root-missing","apple-root-invalid-der","apple-verifier-initialization","apple-jws-verification-rejected"];
+    const specificVerifierCode = knownVerifierCodes.find(code => message.includes(code));
     const reason = stage !== "apple-transaction" ? "other-stage"
+      : specificVerifierCode ? specificVerifierCode
       : message.includes("missing apple") || message.includes("invalid apple_app_id") ? "server-configuration"
       : message.includes("invalid-signed-transaction") ? "invalid-jws-format"
       : message.includes("certificate") || message.includes("trust") || message.includes("root") ? "certificate-verification"

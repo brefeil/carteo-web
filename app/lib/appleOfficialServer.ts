@@ -24,3 +24,9 @@ export async function verifiedAppleTransaction(transactionId: string, environmen
 export async function verifiedAppleNotification(signedPayload: string, environment: "Production" | "Sandbox") {
   return appleSignedDataVerifier(environment).verifyAndDecodeNotification(signedPayload);
 }
+
+/** Cryptographically verify an Apple-signed StoreKit 2 transaction JWS. */
+export async function verifiedAppleSignedTransaction(jws: string, environment: "Production" | "Sandbox") {
+  if (jws.length > 20000 || jws.split(".").length !== 3) throw new Error("invalid-signed-transaction");
+  return appleSignedDataVerifier(environment).verifyAndDecodeTransaction(jws);
+}

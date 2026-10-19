@@ -36,9 +36,17 @@ export async function POST(request: NextRequest) {
     stage = "firebase-projection";
     const updatedCards = await projectApplePremiumToOwnerCards({ uid, originalTransactionId: transaction.originalTransactionId, transactionId: transaction.transactionId, productId: transaction.productId, decision, eventTime: transaction.purchaseDate ?? 0 });
     return NextResponse.json({ verified: true, bound: true, status: decision.status, entitlementGranted: decision.status === "active" && updatedCards > 0, updatedCards });
-  } catch {
-    // Only disclose a fixed stage label, never purchase identifiers or credentials.
-    console.error("[premium/apple] synchronization failed at stage:", stage);
-    return NextResponse.json({ error: "purchase-verification-failed", stage }, { status: 422 });
+  } catch (caught) {
+    // Public diagnostics are fixed categories, not raw Apple exceptions or identifiers.
+    const message = caught instanceof Error ? caught.message.toLowerCase() : "";
+    const reason = stage !== "apple-transaction" ? "other-stage"
+      : message.includes("missing apple") || message.includes("invalid apple_app_id") ? "server-configuration"
+      : message.includes("invalid-signed-transaction") ? "invalid-jws-format"
+      : message.includes("certificate") || message.includes("trust") || message.includes("root") ? "certificate-verification"
+      : message.includes("environment") || message.includes("bundle") || message.includes("app id") ? "signed-claims-mismatch"
+      : message.includes("signature") || message.includes("verification") || message.includes("verify") ? "signed-transaction-verification"
+      : "apple-transaction-unknown";
+    console.error("[premium/apple] failed:", stage, reason);
+    return NextResponse.json({ error: "purchase-verification-failed", stage, reason }, { status: 422 });
   }
 }

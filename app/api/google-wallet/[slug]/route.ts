@@ -200,8 +200,8 @@ export async function GET(
       hexBackgroundColor: colorForTheme(theme),
       barcode: {
         type: "QR_CODE",
-        value: profileURL,
-        alternateText: "Ouvrir la carte Cartéo",
+        value: `https://carteo.cloud/api/vcard?slug=${encodeURIComponent(slug)}`,
+        alternateText: "Enregistrer le contact",
       },
       textModulesData,
       linksModuleData: {

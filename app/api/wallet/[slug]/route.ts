@@ -308,7 +308,7 @@ export async function GET(
 
     pass.setBarcodes({
       format: "PKBarcodeFormatQR",
-      message: profileURL,
+      message: `https://carteo.cloud/api/vcard?slug=${encodeURIComponent(slug)}`,
       messageEncoding: "iso-8859-1",
       altText: "Ouvrir la carte Cartéo",
     });

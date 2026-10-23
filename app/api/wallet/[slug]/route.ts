@@ -1,3 +1,4 @@
+import { isPremiumAtRequest } from "../../../lib/premiumAtRequest";
 import { getProfileBySlug } from "../../../lib/firestoreServer";
 import forge from "node-forge";
 import { PKPass } from "passkit-generator";
@@ -172,6 +173,15 @@ export async function GET(
     const youtube = clean(profile.youtube, 300);
     const bio = clean(profile.bio, 1000);
     const profileURL = `https://carteo.cloud/u/${encodeURIComponent(slug)}`;
+    const premium = isPremiumAtRequest(profile);
+    const socials = [
+      { key: "linkedin", value: linkedin }, { key: "instagram", value: instagram },
+      { key: "tiktok", value: tiktok }, { key: "snapchat", value: snapchat },
+      { key: "facebook", value: facebook }, { key: "youtube", value: youtube },
+    ].filter(item => item.value.length > 0);
+    const selected = socials.find(item => item.key === profile.selectedSocialNetwork);
+    const visibleSocials = premium ? socials : (selected ? [selected] : socials.slice(0, 1));
+    const canShowSocial = (key: string) => visibleSocials.some(item => item.key === key);
 
     pass.primaryFields.push({
       key: "name",
@@ -238,7 +248,7 @@ export async function GET(
       });
     }
 
-    if (linkedin) {
+    if (canShowSocial("linkedin")) {
       pass.backFields.push({
         key: "linkedin",
         label: "LINKEDIN",
@@ -246,7 +256,7 @@ export async function GET(
       });
     }
 
-    if (instagram) {
+    if (canShowSocial("instagram")) {
       pass.backFields.push({
         key: "instagram",
         label: "INSTAGRAM",
@@ -254,7 +264,7 @@ export async function GET(
       });
     }
 
-    if (tiktok) {
+    if (canShowSocial("tiktok")) {
       pass.backFields.push({
         key: "tiktok",
         label: "TIKTOK",
@@ -262,7 +272,7 @@ export async function GET(
       });
     }
 
-    if (snapchat) {
+    if (canShowSocial("snapchat")) {
       pass.backFields.push({
         key: "snapchat",
         label: "SNAPCHAT",
@@ -270,7 +280,7 @@ export async function GET(
       });
     }
 
-    if (facebook) {
+    if (canShowSocial("facebook")) {
       pass.backFields.push({
         key: "facebook",
         label: "FACEBOOK",
@@ -278,7 +288,7 @@ export async function GET(
       });
     }
 
-    if (youtube) {
+    if (canShowSocial("youtube")) {
       pass.backFields.push({
         key: "youtube",
         label: "YOUTUBE",
